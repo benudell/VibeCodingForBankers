@@ -531,6 +531,9 @@
     <div class="wopr-header">SHALL WE PLAY A GAME?<span class="blink"> &#9608;</span></div>
     <div id="game-list"></div>
     <div class="game-controls">&#8593;&#8595; NAVIGATE &nbsp;&nbsp; ENTER SELECT &nbsp;&nbsp; ESC EXIT</div>
+    <div style="margin-top:20px;">
+      <span onclick="closeOverlay()" style="cursor:pointer;color:#1a6b9a;font-size:18px;border:1px solid #1a6b9a;padding:2px 14px;" onmouseover="this.style.color='#4fc3f7';this.style.borderColor='#4fc3f7';" onmouseout="this.style.color='#1a6b9a';this.style.borderColor='#1a6b9a';">[ HOME ]</span>
+    </div>
   </div>
 
   <!-- Tic-Tac-Toe -->
@@ -642,8 +645,14 @@
       const div = document.createElement('div');
       div.className = 'game-item' + (i === selectedIdx ? ' selected' : '');
       div.textContent = game;
-      div.addEventListener('mouseover', () => { selectedIdx = i; renderGameList(); });
+      div.addEventListener('mouseover', () => {
+        selectedIdx = i;
+        document.querySelectorAll('.game-item').forEach((el, idx) => {
+          el.classList.toggle('selected', idx === i);
+        });
+      });
       div.addEventListener('click',     () => { selectedIdx = i; selectGame(); });
+      div.addEventListener('touchend',  (e) => { e.preventDefault(); selectedIdx = i; selectGame(); });
       container.appendChild(div);
     });
   }
