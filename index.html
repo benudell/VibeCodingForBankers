@@ -1,9 +1,975 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <title>Vibe Coding for Bankers</title>
-  </head>
-  <body>
-    <h1>Welcome to Vibe Coding for Bankers</h1>
-  </body>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vibe Coding for Bankers</title>
+  <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #000c1a;
+      color: #4fc3f7;
+      font-family: 'VT323', monospace;
+      font-size: 20px;
+      min-height: 100vh;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: repeating-linear-gradient(
+        0deg,
+        rgba(0,0,0,0.15) 0px,
+        rgba(0,0,0,0.15) 1px,
+        transparent 1px,
+        transparent 2px
+      );
+      pointer-events: none;
+      z-index: 100;
+    }
+
+    body::after {
+      content: '';
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(79, 195, 247, 0.02);
+      pointer-events: none;
+      z-index: 99;
+      animation: flicker 8s infinite;
+    }
+
+    @keyframes flicker {
+      0%, 95%, 100% { opacity: 1; }
+      96%  { opacity: 0.85; }
+      97%  { opacity: 1; }
+      98%  { opacity: 0.9; }
+    }
+
+    .screen {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 40px 24px 60px;
+    }
+
+    .header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 1px solid #4fc3f7;
+      padding-bottom: 12px;
+      margin-bottom: 28px;
+      opacity: 0;
+      animation: fadeIn 0.1s forwards 0.1s;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .site-logo {
+      height: 80px;
+      width: auto;
+      opacity: 0.9;
+      filter: drop-shadow(0 0 6px #4fc3f7);
+    }
+
+    .site-title {
+      font-size: 36px;
+      line-height: 1.1;
+      text-shadow: 0 0 8px #4fc3f7;
+    }
+
+    .system-status {
+      font-size: 16px;
+      color: #38b2d8;
+      text-align: right;
+    }
+
+    .blink { animation: blink 1s step-end infinite; }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0; }
+    }
+
+    .boot-log {
+      color: #38b2d8;
+      font-size: 17px;
+      margin-bottom: 32px;
+      min-height: 80px;
+    }
+
+    .boot-line { display: block; opacity: 0; }
+    .boot-line:nth-child(1) { animation: fadeIn 0.05s forwards 0.4s; }
+    .boot-line:nth-child(2) { animation: fadeIn 0.05s forwards 0.9s; }
+    .boot-line:nth-child(3) { animation: fadeIn 0.05s forwards 1.4s; }
+    .boot-line:nth-child(4) { animation: fadeIn 0.05s forwards 1.8s; }
+
+    .divider {
+      border: none;
+      border-top: 1px solid #1a6b9a;
+      margin: 24px 0;
+    }
+
+    .section-label {
+      font-size: 22px;
+      color: #4fc3f7;
+      margin-bottom: 16px;
+      text-shadow: 0 0 6px #4fc3f7;
+      opacity: 0;
+      animation: fadeIn 0.1s forwards 2.2s;
+    }
+
+    .project-hint {
+      font-size: 18px;
+      color: #38b2d8;
+      margin-bottom: 14px;
+    }
+
+    .project-list {
+      list-style: none;
+      margin-bottom: 40px;
+      opacity: 0;
+      animation: fadeIn 0.1s forwards 2.4s;
+    }
+
+    .project-list li {
+      display: flex;
+      align-items: baseline;
+      padding: 6px 0;
+      border-bottom: 1px dashed #0a2a40;
+      font-size: 22px;
+      transition: background 0.1s;
+    }
+
+    .project-list li:hover { background: rgba(79,195,247,0.07); }
+
+    .project-num  { color: #1a6b9a; width: 40px; flex-shrink: 0; }
+    .project-name { flex: 1; color: #4fc3f7; }
+
+    .project-dots {
+      flex: 1;
+      overflow: hidden;
+      color: #0a2a40;
+      padding: 0 8px;
+      letter-spacing: 2px;
+    }
+
+    .project-link {
+      color: #4fc3f7;
+      text-decoration: none;
+      border: 1px solid #4fc3f7;
+      padding: 1px 10px;
+      font-size: 18px;
+      text-shadow: 0 0 6px #4fc3f7;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .project-link:hover { background: #4fc3f7; color: #000; text-shadow: none; }
+
+    .project-link.disabled {
+      border-color: #0d3d5e;
+      color: #0d3d5e;
+      pointer-events: none;
+      text-shadow: none;
+    }
+
+    .nav-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid #1a6b9a;
+      padding-top: 20px;
+      margin-top: 20px;
+      opacity: 0;
+      animation: fadeIn 0.1s forwards 2.6s;
+    }
+
+    .nav-links a {
+      color: #4fc3f7;
+      text-decoration: none;
+      font-size: 20px;
+      margin-right: 20px;
+      padding: 2px 10px;
+      border: 1px solid transparent;
+    }
+
+    .nav-links a:hover,
+    .nav-links a.active { border-color: #4fc3f7; text-shadow: 0 0 6px #4fc3f7; }
+
+    .prompt { font-size: 20px; color: #1a6b9a; }
+
+    @keyframes fadeIn { to { opacity: 1; } }
+
+    /* ================================================
+       GAME OVERLAY
+       ================================================ */
+
+    #game-overlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: #000;
+      color: #4fc3f7;
+      font-family: 'VT323', monospace;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 500;
+      overflow-y: auto;
+    }
+
+    .game-screen { display: none; width: 100%; max-width: 680px; padding: 40px 24px; }
+    .game-screen.active { display: block; }
+
+    .wopr-header {
+      font-size: 30px;
+      margin-bottom: 20px;
+      text-shadow: 0 0 8px #4fc3f7;
+      letter-spacing: 2px;
+    }
+
+    /* Game select list */
+    .game-item {
+      font-size: 22px;
+      padding: 3px 28px;
+      cursor: pointer;
+      letter-spacing: 1px;
+    }
+
+    .game-item:hover       { background: rgba(79,195,247,0.12); }
+    .game-item.selected    { background: #4fc3f7; color: #000; text-shadow: none; }
+    .game-item.selected:hover { background: #4fc3f7; }
+
+    .game-controls {
+      margin-top: 22px;
+      font-size: 15px;
+      color: #1a6b9a;
+      letter-spacing: 1px;
+    }
+
+    /* Shared button */
+    .game-btn {
+      background: transparent;
+      border: 1px solid #4fc3f7;
+      color: #4fc3f7;
+      font-family: 'VT323', monospace;
+      font-size: 22px;
+      padding: 4px 20px;
+      cursor: pointer;
+      margin: 6px 4px;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .game-btn:hover,
+    .game-btn.selected { background: #4fc3f7; color: #000; }
+
+    /* TTT */
+    .ttt-status {
+      font-size: 22px;
+      margin-bottom: 16px;
+      min-height: 32px;
+      color: #4fc3f7;
+    }
+
+    .ttt-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 80px);
+      margin-bottom: 20px;
+    }
+
+    .ttt-cell {
+      width: 80px; height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 40px;
+      cursor: pointer;
+      border: 1px solid #1a6b9a;
+      transition: background 0.1s;
+    }
+
+    .ttt-cell:hover:not(.taken) { background: rgba(79,195,247,0.1); }
+    .ttt-cell.taken { cursor: default; }
+    .ttt-cell.winner-cell { background: rgba(79,195,247,0.25); text-shadow: 0 0 12px #4fc3f7; }
+    .ttt-cell.X { color: #4fc3f7; }
+    .ttt-cell.O { color: #38b2d8; }
+
+    /* Nice game */
+    .nice-game-text {
+      font-size: 26px;
+      line-height: 1.5;
+      margin-bottom: 28px;
+      text-shadow: 0 0 6px #4fc3f7;
+      letter-spacing: 1px;
+    }
+
+    /* Nuke */
+    .nuke-title {
+      font-size: 24px;
+      margin-bottom: 18px;
+      letter-spacing: 2px;
+      text-shadow: 0 0 8px #4fc3f7;
+    }
+
+    .side-select { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
+
+    #nuke-log .strike { display: block; }
+    #nuke-log .hit    { color: #4fc3f7; }
+
+    /* Game Over */
+    .game-over-text {
+      font-size: 38px;
+      letter-spacing: 6px;
+      text-shadow: 0 0 20px #4fc3f7;
+      margin-bottom: 28px;
+      text-align: center;
+    }
+
+    .game-over-quote {
+      font-size: 22px;
+      line-height: 1.7;
+      color: #38b2d8;
+      margin-bottom: 32px;
+      text-align: center;
+    }
+
+    .esc-hint {
+      position: fixed;
+      bottom: 20px; right: 24px;
+      font-size: 15px;
+      color: #1a6b9a;
+      z-index: 600;
+    }
+
+    #nuke-map {
+      display: block;
+      width: 100%;
+      height: 220px;
+      margin-bottom: 12px;
+      border: 1px solid #1a3d5c;
+      background: #000c1a;
+    }
+
+    #nuke-log {
+      font-size: 17px;
+      line-height: 1.7;
+      color: #38b2d8;
+      max-height: 180px;
+      overflow-y: auto;
+    }
+  </style>
+</head>
+<body>
+<div class="screen">
+
+  <div class="header-bar">
+    <div class="header-left">
+      <img src="robot.png" alt="logo" class="site-logo">
+      <div class="site-title">VIBE CODING<br>FOR BANKERS</div>
+    </div>
+    <div class="system-status">
+      SYSTEM: <span style="color:#4fc3f7;">ONLINE</span><br>
+      USER: AUTHENTICATED<br>
+      <span class="blink">&#9608;</span>
+    </div>
+  </div>
+
+  <div class="boot-log">
+    <span class="boot-line">&gt; INITIALIZING SYSTEM...</span>
+    <span class="boot-line">&gt; LOADING BUILD INDEX... <span style="color:#4fc3f7;">OK</span></span>
+    <span class="boot-line">&gt; CONNECTING TO MAINFRAME... <span style="color:#4fc3f7;">OK</span></span>
+    <span class="boot-line">&gt; SHALL WE PLAY A GAME? <span style="color:#1a6b9a;">[Y/N]:</span> <span class="blink">_</span></span>
+  </div>
+
+  <hr class="divider">
+
+  <div class="section-label">[ PROJECTS ]</div>
+  <div class="project-hint">Click a project to explore.<span class="blink"> _</span></div>
+
+  <ul class="project-list">
+    <li>
+      <span class="project-num">01.</span>
+      <span class="project-name">Onboarding Playbook</span>
+      <span class="project-dots">................................................</span>
+      <a href="#" class="project-link disabled">[COMING SOON]</a>
+    </li>
+    <!-- ADD NEW PROJECTS BELOW THIS LINE -->
+  </ul>
+
+  <hr class="divider">
+
+  <div class="section-label" style="animation-delay:2.3s;">[ ARTICLES &amp; CONTENT ]</div>
+  <div class="project-hint">Click an article to read.<span class="blink"> _</span></div>
+
+  <ul class="project-list" style="animation-delay:2.5s;">
+    <li>
+      <span class="project-num">01.</span>
+      <span class="project-name">Getting Started with Vibe Coding for Bankers</span>
+      <span class="project-dots">................................................</span>
+      <a href="#" class="project-link disabled">[COMING SOON]</a>
+    </li>
+    <!-- ADD NEW ARTICLES BELOW THIS LINE -->
+  </ul>
+
+  <hr class="divider">
+
+  <div class="nav-bar">
+    <div class="nav-links">
+      <a href="index.html" class="active">[ HOME ]</a>
+      <a href="about.html">[ ABOUT ]</a>
+    </div>
+    <div class="prompt">C:\VCFB&gt; <span class="blink">_</span></div>
+  </div>
+
+</div>
+
+<!-- ================================================
+     GAME OVERLAY
+     ================================================ -->
+<div id="game-overlay">
+
+  <div class="esc-hint">[ ESC ] EXIT</div>
+
+  <!-- Game Select -->
+  <div id="screen-select" class="game-screen">
+    <div class="wopr-header">SHALL WE PLAY A GAME?<span class="blink"> &#9608;</span></div>
+    <div id="game-list"></div>
+    <div class="game-controls">&#8593;&#8595; NAVIGATE &nbsp;&nbsp; ENTER SELECT &nbsp;&nbsp; ESC EXIT</div>
+  </div>
+
+  <!-- Tic-Tac-Toe -->
+  <div id="screen-ttt" class="game-screen">
+    <div class="wopr-header">TIC-TAC-TOE</div>
+    <div class="ttt-status" id="ttt-status">YOUR TURN — YOU ARE X</div>
+    <div class="ttt-grid" id="ttt-grid"></div>
+    <div id="ttt-actions"></div>
+  </div>
+
+  <!-- Wouldn't You Rather -->
+  <div id="screen-nicegame" class="game-screen">
+    <div class="nice-game-text">
+      WOULDN'T YOU LIKE TO PLAY A NICE GAME<br>OF TIC-TAC-TOE?
+    </div>
+    <button class="game-btn" onclick="niceTTT()">[ YES ]</button>
+    <button class="game-btn" onclick="niceNo()">[ NO ]</button>
+  </div>
+
+  <!-- Thermonuclear War - Side Select -->
+  <div id="screen-nuke" class="game-screen">
+    <div class="nuke-title">GREETINGS, PROFESSOR FALKEN.</div>
+    <div style="font-size:19px; color:#38b2d8; margin-bottom:24px; line-height:1.7;">
+      &gt; INITIATING: GLOBAL THERMONUCLEAR WAR<br>
+      &gt; SELECT YOUR SIDE:
+    </div>
+    <div class="side-select">
+      <button class="game-btn" id="btn-us"   onclick="selectSide('US')">[ UNITED STATES ]</button>
+      <button class="game-btn" id="btn-ussr" onclick="selectSide('USSR')">[ U.S.S.R. ]</button>
+    </div>
+    <button class="game-btn" id="btn-start" onclick="startNuke()"
+      style="opacity:0.3;pointer-events:none;">[ START GAME ]</button>
+  </div>
+
+  <!-- Thermonuclear War - Bombing Sequence -->
+  <div id="screen-nuke-game" class="game-screen">
+    <div class="nuke-title" id="nuke-title">GLOBAL THERMONUCLEAR WAR</div>
+    <canvas id="nuke-map"></canvas>
+    <div id="nuke-log"></div>
+  </div>
+
+  <!-- Game Over -->
+  <div id="screen-gameover" class="game-screen" style="text-align:center;padding-top:60px;">
+    <div class="game-over-text">G A M E &nbsp; O V E R</div>
+    <div class="game-over-quote">
+      A STRANGE GAME.<br>
+      THE ONLY WINNING MOVE IS NOT TO PLAY.<br><br>
+      HOW ABOUT A NICE GAME OF CHESS?
+    </div>
+    <button class="game-btn" onclick="openGameOverlay()">[ PLAY AGAIN ]</button>
+    <button class="game-btn" onclick="closeOverlay()">[ EXIT ]</button>
+  </div>
+
+</div>
+
+<script>
+  // ── Game data ──────────────────────────────────────────
+  const GAMES = [
+    'TIC-TAC-TOE',
+    'BLACK JACK',
+    'GIN RUMMY',
+    'HEARTS',
+    'BRIDGE',
+    'CHECKERS',
+    'CHESS',
+    'POKER',
+    'FIGHTER COMBAT',
+    'GUERRILLA ENGAGEMENT',
+    'DESERT WARFARE',
+    'AIR-TO-GROUND ACTIONS',
+    'THEATERWIDE TACTICAL WARFARE',
+    'THEATERWIDE BIOTOXIC AND CHEMICAL WARFARE',
+    'GLOBAL THERMONUCLEAR WAR'
+  ];
+
+  const US_TARGETS   = ['NEW YORK, NY','WASHINGTON, DC','LOS ANGELES, CA','CHICAGO, IL',
+                         'HOUSTON, TX','PHILADELPHIA, PA','SAN FRANCISCO, CA','SEATTLE, WA',
+                         'DETROIT, MI','BOSTON, MA','DALLAS, TX','MIAMI, FL'];
+  const USSR_TARGETS = ['MOSCOW','LENINGRAD','KIEV','MINSK','VLADIVOSTOK','NOVOSIBIRSK',
+                         'BAKU','TASHKENT','VOLGOGRAD','TBILISI','RIGA','ODESSA'];
+
+  let selectedIdx = 0;
+  let nukeSide    = null;
+
+  // ── Overlay control ─────────────────────────────────────
+  function openGameOverlay() {
+    selectedIdx = 0;
+    document.getElementById('game-overlay').style.display = 'flex';
+    document.getElementById('game-overlay').style.background = '#000';
+    showScreen('screen-select');
+    renderGameList();
+  }
+
+  function closeOverlay() {
+    stopNukeAnim();
+    document.getElementById('game-overlay').style.display = 'none';
+  }
+
+  function showScreen(id) {
+    document.querySelectorAll('.game-screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+
+  // ── Game select ─────────────────────────────────────────
+  function renderGameList() {
+    const container = document.getElementById('game-list');
+    container.innerHTML = '';
+    GAMES.forEach((game, i) => {
+      const div = document.createElement('div');
+      div.className = 'game-item' + (i === selectedIdx ? ' selected' : '');
+      div.textContent = game;
+      div.addEventListener('mouseover', () => { selectedIdx = i; renderGameList(); });
+      div.addEventListener('click',     () => { selectedIdx = i; renderGameList(); setTimeout(selectGame, 120); });
+      container.appendChild(div);
+    });
+  }
+
+  function selectGame() {
+    const game = GAMES[selectedIdx];
+    if (game === 'TIC-TAC-TOE') {
+      startTTT();
+    } else if (game === 'GLOBAL THERMONUCLEAR WAR') {
+      startNukeSelect();
+    } else {
+      showScreen('screen-nicegame');
+    }
+  }
+
+  // ── Keyboard ────────────────────────────────────────────
+  document.addEventListener('keydown', function(e) {
+    const overlay   = document.getElementById('game-overlay');
+    const isOpen    = overlay.style.display === 'flex';
+
+    if (!isOpen && (e.key === 'y' || e.key === 'Y')) { openGameOverlay(); return; }
+    if (e.key === 'Escape') { closeOverlay(); return; }
+    if (!isOpen) return;
+
+    const active = document.querySelector('.game-screen.active');
+    if (!active) return;
+
+    if (active.id === 'screen-select') {
+      if (e.key === 'ArrowDown' || e.key === 'Tab') {
+        e.preventDefault();
+        selectedIdx = Math.min(selectedIdx + 1, GAMES.length - 1);
+        renderGameList();
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        selectedIdx = Math.max(selectedIdx - 1, 0);
+        renderGameList();
+      } else if (e.key === 'Enter') {
+        selectGame();
+      }
+    }
+  });
+
+  // ── Tic-Tac-Toe ─────────────────────────────────────────
+  let tttBoard   = Array(9).fill(null);
+  let tttDone    = false;
+
+  function startTTT() {
+    tttBoard = Array(9).fill(null);
+    tttDone  = false;
+    document.getElementById('ttt-status').textContent  = 'YOUR TURN — YOU ARE X';
+    document.getElementById('ttt-actions').innerHTML   = '';
+    showScreen('screen-ttt');
+    renderTTTGrid();
+  }
+
+  function renderTTTGrid(winLine) {
+    const grid = document.getElementById('ttt-grid');
+    grid.innerHTML = '';
+    tttBoard.forEach((cell, i) => {
+      const div = document.createElement('div');
+      div.className = 'ttt-cell' + (cell ? ' taken ' + cell : '');
+      if (winLine && winLine.includes(i)) div.classList.add('winner-cell');
+      div.textContent = cell || '';
+      if (!cell && !tttDone) div.addEventListener('click', () => playerMove(i));
+      grid.appendChild(div);
+    });
+  }
+
+  function playerMove(i) {
+    if (tttBoard[i] || tttDone) return;
+    tttBoard[i] = 'X';
+    const r = checkTTT(tttBoard);
+    if (r) { renderTTTGrid(r.line); endTTT(r.winner); return; }
+    renderTTTGrid();
+    document.getElementById('ttt-status').textContent = 'COMPUTER THINKING...';
+    setTimeout(() => {
+      const move = getBestMove([...tttBoard]);
+      if (move !== -1) tttBoard[move] = 'O';
+      const r2 = checkTTT(tttBoard);
+      if (r2) { renderTTTGrid(r2.line); endTTT(r2.winner); }
+      else     { renderTTTGrid(); document.getElementById('ttt-status').textContent = 'YOUR TURN — YOU ARE X'; }
+    }, 550);
+  }
+
+  function endTTT(winner) {
+    tttDone = true;
+    const msg = winner === 'X' ? '> YOU WIN! NICE MOVE.' :
+                winner === 'O' ? '> COMPUTER WINS. BETTER LUCK NEXT TIME.' :
+                                 '> DRAW. WELL PLAYED.';
+    document.getElementById('ttt-status').textContent = msg;
+    document.getElementById('ttt-actions').innerHTML = `
+      <button class="game-btn" onclick="startTTT()">[ PLAY AGAIN ]</button>
+      <button class="game-btn" onclick="openGameOverlay()">[ GAME SELECT ]</button>
+      <button class="game-btn" onclick="closeOverlay()">[ EXIT ]</button>`;
+  }
+
+  function checkTTT(b) {
+    const lines = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+    for (const l of lines)
+      if (b[l[0]] && b[l[0]] === b[l[1]] && b[l[0]] === b[l[2]])
+        return { winner: b[l[0]], line: l };
+    if (b.every(c => c)) return { winner: 'draw', line: [] };
+    return null;
+  }
+
+  function minimax(b, isMax) {
+    const r = checkTTT(b);
+    if (r) return r.winner === 'O' ? 10 : r.winner === 'X' ? -10 : 0;
+    let best = isMax ? -Infinity : Infinity;
+    for (let i = 0; i < 9; i++) {
+      if (!b[i]) {
+        b[i] = isMax ? 'O' : 'X';
+        const s = minimax(b, !isMax);
+        b[i] = null;
+        best = isMax ? Math.max(best, s) : Math.min(best, s);
+      }
+    }
+    return best;
+  }
+
+  function getBestMove(b) {
+    let best = -Infinity, move = -1;
+    for (let i = 0; i < 9; i++) {
+      if (!b[i]) {
+        b[i] = 'O';
+        const s = minimax(b, false);
+        b[i] = null;
+        if (s > best) { best = s; move = i; }
+      }
+    }
+    return move;
+  }
+
+  // ── Nice game prompt ────────────────────────────────────
+  function niceTTT() { startTTT(); }
+  function niceNo()  { openGameOverlay(); }
+
+  // ── World map data ───────────────────────────────────────
+  // [lon, lat] arrays per continent
+  const CONTINENTS = [
+    // North America
+    [[-168,71],[-140,70],[-95,73],[-83,62],[-65,47],[-74,41],
+     [-80,25],[-79,9],[-110,23],[-118,34],[-125,49],[-140,60],[-168,60]],
+    // Greenland
+    [[-44,83],[-20,83],[-18,72],[-24,68],[-44,60],[-57,75]],
+    // South America
+    [[-79,9],[-62,12],[-35,-4],[-52,-33],[-65,-55],[-75,-51],[-81,-4]],
+    // Europe
+    [[-9,36],[2,51],[10,58],[20,60],[28,70],[38,70],
+     [36,44],[28,38],[18,40],[8,44],[0,47],[-9,44],[-9,36]],
+    // Africa
+    [[-5,36],[18,38],[32,30],[50,11],[33,-30],[18,-35],[-17,14],[-5,36]],
+    // Asia
+    [[38,70],[60,73],[100,73],[140,73],[170,65],[180,65],
+     [180,50],[140,43],[122,31],[88,22],[68,22],[60,22],
+     [44,12],[43,11],[32,30],[28,38],[36,44],[38,70]],
+    // Australia
+    [[114,-22],[122,-17],[130,-12],[138,-15],[142,-10],
+     [151,-24],[151,-34],[140,-35],[116,-35],[114,-22]]
+  ];
+
+  const US_CITY_COORDS = {
+    'NEW YORK, NY':[-74.0,40.7], 'WASHINGTON, DC':[-77.0,38.9],
+    'LOS ANGELES, CA':[-118.2,34.1], 'CHICAGO, IL':[-87.6,41.9],
+    'HOUSTON, TX':[-95.4,29.8], 'PHILADELPHIA, PA':[-75.2,40.0],
+    'SAN FRANCISCO, CA':[-122.4,37.8], 'SEATTLE, WA':[-122.3,47.6],
+    'DETROIT, MI':[-83.0,42.3], 'BOSTON, MA':[-71.1,42.4],
+    'DALLAS, TX':[-97.0,32.8], 'MIAMI, FL':[-80.2,25.8]
+  };
+  const USSR_CITY_COORDS = {
+    'MOSCOW':[37.6,55.8], 'LENINGRAD':[30.3,59.9], 'KIEV':[30.5,50.5],
+    'MINSK':[27.6,53.9], 'VLADIVOSTOK':[131.9,43.1], 'NOVOSIBIRSK':[82.9,54.9],
+    'BAKU':[49.9,40.4], 'TASHKENT':[69.3,41.3], 'VOLGOGRAD':[44.5,48.7],
+    'TBILISI':[44.8,41.7], 'RIGA':[24.1,57.0], 'ODESSA':[30.7,46.5]
+  };
+
+  // Map state
+  let nukeMapCtx = null, nukeMapW = 640, nukeMapH = 220;
+  let nukeAnimFrame = null;
+  let nukeMissiles = [], nukeExplosions = [], cityHits = new Set();
+
+  function lonLatToCanvas(lon, lat, W, H) {
+    return [(lon + 180) / 360 * W, (75 - lat) / 135 * H];
+  }
+
+  function initNukeMap() {
+    const canvas = document.getElementById('nuke-map');
+    const W = canvas.parentElement.clientWidth || 640;
+    const H = 220;
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    nukeMapCtx = canvas.getContext('2d');
+    nukeMapCtx.scale(dpr, dpr);
+    nukeMapW = W; nukeMapH = H;
+    nukeMissiles = []; nukeExplosions = []; cityHits = new Set();
+    stopNukeAnim();
+    nukeLoop();
+  }
+
+  function stopNukeAnim() {
+    if (nukeAnimFrame) { cancelAnimationFrame(nukeAnimFrame); nukeAnimFrame = null; }
+  }
+
+  function nukeLoop() {
+    const ctx = nukeMapCtx, W = nukeMapW, H = nukeMapH;
+    ctx.fillStyle = '#000c1a';
+    ctx.fillRect(0, 0, W, H);
+
+    // Draw continents
+    ctx.strokeStyle = '#1a4060';
+    ctx.lineWidth = 0.8;
+    ctx.shadowBlur = 0;
+    CONTINENTS.forEach(pts => {
+      ctx.beginPath();
+      pts.forEach(([lon, lat], i) => {
+        const [x, y] = lonLatToCanvas(lon, lat, W, H);
+        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      });
+      ctx.closePath();
+      ctx.stroke();
+    });
+
+    // Draw city dots — both sides
+    [[US_CITY_COORDS, '#1a5070'], [USSR_CITY_COORDS, '#1a5070']].forEach(([coords, color]) => {
+      Object.entries(coords).forEach(([name, [lon, lat]]) => {
+        const hit = cityHits.has(name);
+        if (hit) return; // explosion blob draws this city instead
+        const [x, y] = lonLatToCanvas(lon, lat, W, H);
+        ctx.beginPath(); ctx.arc(x, y, 2, 0, Math.PI*2);
+        ctx.fillStyle = color; ctx.fill();
+      });
+    });
+
+    // Animate missiles
+    nukeMissiles.forEach(m => {
+      if (m.done) return;
+      m.progress = Math.min(1, m.progress + 0.022);
+      // Draw trail
+      const steps = 60, end = Math.floor(m.progress * steps);
+      ctx.beginPath();
+      ctx.strokeStyle = '#87ceeb'; ctx.lineWidth = 1.2;
+      ctx.shadowColor = '#4fc3f7'; ctx.shadowBlur = 4;
+      for (let i = 0; i <= end; i++) {
+        const t = i / steps;
+        const x = (1-t)**2*m.x1 + 2*(1-t)*t*m.cx + t**2*m.x2;
+        const y = (1-t)**2*m.y1 + 2*(1-t)*t*m.cy + t**2*m.y2;
+        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      }
+      ctx.stroke(); ctx.shadowBlur = 0;
+      // Missile head
+      if (m.progress < 1) {
+        const t = end / steps;
+        const hx = (1-t)**2*m.x1 + 2*(1-t)*t*m.cx + t**2*m.x2;
+        const hy = (1-t)**2*m.y1 + 2*(1-t)*t*m.cy + t**2*m.y2;
+        ctx.beginPath(); ctx.arc(hx, hy, 2.5, 0, Math.PI*2);
+        ctx.fillStyle = '#fff'; ctx.shadowColor = '#fff'; ctx.shadowBlur = 8;
+        ctx.fill(); ctx.shadowBlur = 0;
+      }
+      if (m.progress >= 1) {
+        m.done = true;
+        cityHits.add(m.targetName);
+        nukeExplosions.push({
+          x: m.x2, y: m.y2, settled: false,
+          rings: [{r:0, maxR:32, spd:2.0}, {r:0, maxR:22, spd:1.4}, {r:0, maxR:13, spd:0.9}]
+        });
+      }
+    });
+
+    // Draw settled blobs first (persistent white circles)
+    nukeExplosions.forEach(e => {
+      if (!e.settled) return;
+      ctx.beginPath(); ctx.arc(e.x, e.y, 13, 0, Math.PI*2);
+      ctx.fillStyle = 'rgba(255,255,255,0.9)';
+      ctx.shadowColor = '#fff'; ctx.shadowBlur = 14;
+      ctx.fill(); ctx.shadowBlur = 0;
+    });
+
+    // Animate expanding rings + initial flash
+    nukeExplosions.forEach(e => {
+      if (e.settled) return;
+      let allDone = true;
+      e.rings.forEach(ring => {
+        if (ring.r < ring.maxR) { ring.r += ring.spd; allDone = false; }
+        const a = Math.max(0, 1 - ring.r / ring.maxR);
+        ctx.beginPath(); ctx.arc(e.x, e.y, ring.r, 0, Math.PI*2);
+        ctx.strokeStyle = `rgba(255,255,255,${a})`; ctx.lineWidth = 3;
+        ctx.shadowColor = '#fff'; ctx.shadowBlur = 18; ctx.stroke(); ctx.shadowBlur = 0;
+        // Filled center flash
+        ctx.beginPath(); ctx.arc(e.x, e.y, ring.r * 0.45, 0, Math.PI*2);
+        ctx.fillStyle = `rgba(255,255,220,${a * 0.85})`; ctx.fill();
+      });
+      if (allDone) e.settled = true;
+    });
+
+    nukeAnimFrame = requestAnimationFrame(nukeLoop);
+  }
+
+  function addMissile(fromLon, fromLat, toLon, toLat, targetName) {
+    const W = nukeMapW, H = nukeMapH;
+    const [x1, y1] = lonLatToCanvas(fromLon, fromLat, W, H);
+    const [x2, y2] = lonLatToCanvas(toLon, toLat, W, H);
+    const cx = (x1 + x2) / 2;
+    const dist = Math.sqrt((x2-x1)**2 + (y2-y1)**2);
+    const cy = Math.min(y1, y2) - dist * 0.5; // arcs high (over the pole)
+    nukeMissiles.push({ x1, y1, cx, cy, x2, y2, progress: 0, done: false, targetName });
+  }
+
+  // ── Global Thermonuclear War ────────────────────────────
+  function startNukeSelect() {
+    nukeSide = null;
+    ['btn-us','btn-ussr'].forEach(id => document.getElementById(id).classList.remove('selected'));
+    const s = document.getElementById('btn-start');
+    s.style.opacity = '0.3'; s.style.pointerEvents = 'none';
+    showScreen('screen-nuke');
+  }
+
+  function selectSide(side) {
+    nukeSide = side;
+    document.getElementById('btn-us').classList.toggle('selected',   side === 'US');
+    document.getElementById('btn-ussr').classList.toggle('selected', side === 'USSR');
+    const s = document.getElementById('btn-start');
+    s.style.opacity = '1'; s.style.pointerEvents = 'auto';
+  }
+
+  function startNuke() {
+    if (!nukeSide) return;
+    showScreen('screen-nuke-game');
+
+    const targets    = nukeSide === 'US' ? USSR_TARGETS : US_TARGETS;
+    const cityCoords = nukeSide === 'US' ? USSR_CITY_COORDS : US_CITY_COORDS;
+    const launchLon  = nukeSide === 'US' ? -110 : 60;
+    const launchLat  = nukeSide === 'US' ? 47   : 55;
+    const attacker   = nukeSide === 'US' ? 'U.S.A.' : 'U.S.S.R.';
+
+    const log = document.getElementById('nuke-log');
+    log.innerHTML = ''; log.style.display = '';
+    document.getElementById('nuke-title').style.display = '';
+
+    // Init canvas after a tick so it's rendered and has width
+    setTimeout(() => initNukeMap(), 60);
+
+    const intro = [
+      `> LAUNCH AUTHORITY CONFIRMED — ${attacker}`,
+      '> TARGETING SEQUENCE INITIATED...',
+      `> ${targets.length} TARGETS CONFIRMED`,
+      '> MISSILES AWAY.',
+      ''
+    ];
+    const strikes = targets.map((t, i) => ({
+      text: `> STRIKE ${String(i+1).padStart(2,'0')}: ${t} ${'·'.repeat(Math.max(1, 36-t.length))} [DESTROYED]`,
+      hit: true, target: t
+    }));
+    const outro = [
+      '', '> ALL TARGETS CONFIRMED DESTROYED.',
+      '> CALCULATING CASUALTIES...',
+      '> ESTIMATED FATALITIES: 4,200,000,000',
+      '> WINNER: NONE.'
+    ];
+
+    const all = [
+      ...intro.map(text => ({ text, hit: false })),
+      ...strikes,
+      ...outro.map(text => ({ text, hit: false }))
+    ];
+
+    all.forEach(({ text, hit }, i) => {
+      const delay = i < intro.length ? i * 700 : intro.length * 700 + (i - intro.length) * 480;
+      setTimeout(() => {
+        const span = document.createElement('span');
+        span.className = 'strike' + (hit ? ' hit' : '');
+        span.textContent = text;
+        log.appendChild(span);
+        log.scrollTop = log.scrollHeight;
+      }, delay);
+    });
+
+    // Escalating missile timing — both sides fire simultaneously
+    // Intervals decrease to create escalating feel
+    const missileDelays = [0, 480, 880, 1240, 1560, 1840, 2080, 2290, 2475, 2640, 2790, 2930];
+    const baseDelay = 2800; // synced with "MISSILES AWAY." text
+
+    // Player's side fires at enemy cities
+    targets.forEach((target, i) => {
+      const c = cityCoords[target]; if (!c) return;
+      setTimeout(() => addMissile(launchLon, launchLat, c[0], c[1], target),
+                 baseDelay + (missileDelays[i] || i * 200));
+    });
+
+    // Enemy retaliates against player's own cities
+    const retaliationTargets = nukeSide === 'US' ? US_TARGETS : USSR_TARGETS;
+    const retaliationCoords  = nukeSide === 'US' ? US_CITY_COORDS : USSR_CITY_COORDS;
+    const retLon = nukeSide === 'US' ? 60 : -110;
+    const retLat = nukeSide === 'US' ? 55 : 47;
+    retaliationTargets.forEach((target, i) => {
+      const c = retaliationCoords[target]; if (!c) return;
+      setTimeout(() => addMissile(retLon, retLat, c[0], c[1], target),
+                 baseDelay + (missileDelays[i] || i * 200) + 220); // 220ms offset
+    });
+
+    const endDelay = intro.length * 700 + (strikes.length + outro.length) * 480;
+    setTimeout(() => {
+      stopNukeAnim();
+      document.getElementById('game-overlay').style.background = '#000';
+      log.style.display = 'none';
+      document.getElementById('nuke-title').style.display = 'none';
+    }, endDelay + 600);
+    setTimeout(() => showScreen('screen-gameover'), endDelay + 2200);
+  }
+</script>
+</body>
 </html>
