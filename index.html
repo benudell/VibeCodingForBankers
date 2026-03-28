@@ -643,7 +643,7 @@
       div.className = 'game-item' + (i === selectedIdx ? ' selected' : '');
       div.textContent = game;
       div.addEventListener('mouseover', () => { selectedIdx = i; renderGameList(); });
-      div.addEventListener('click',     () => { selectedIdx = i; renderGameList(); setTimeout(selectGame, 120); });
+      div.addEventListener('click',     () => { selectedIdx = i; selectGame(); });
       container.appendChild(div);
     });
   }
