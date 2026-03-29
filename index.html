@@ -665,7 +665,14 @@
         });
       });
       div.addEventListener('click',     () => { selectedIdx = i; selectGame(); });
-      div.addEventListener('touchend',  (e) => { e.preventDefault(); selectedIdx = i; selectGame(); });
+      div.addEventListener('touchstart', (e) => { div._touchStartY = e.touches[0].clientY; }, { passive: true });
+      div.addEventListener('touchend',  (e) => {
+        const dy = Math.abs(e.changedTouches[0].clientY - (div._touchStartY || 0));
+        if (dy > 10) return; // user was scrolling, not tapping
+        e.preventDefault();
+        selectedIdx = i;
+        selectGame();
+      });
       container.appendChild(div);
     });
   }
