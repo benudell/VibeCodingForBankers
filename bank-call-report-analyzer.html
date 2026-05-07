@@ -1,0 +1,3163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bank Call Report Analyzer</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    /* ════════════════════════════════════════════════════════════
+       DESIGN TOKENS
+    ════════════════════════════════════════════════════════════ */
+    :root {
+      --navy:         #0a1628;
+      --navy-mid:     #142240;
+      --navy-light:   #1e3358;
+      --gold:         #c9a84c;
+      --gold-light:   #e8c97a;
+      --gold-pale:    #f5e9c8;
+      --cream:        #ffffff;
+      --white:        #ffffff;
+      --text:         #1a2035;
+      --text-mid:     #4a5568;
+      --text-light:   #6b7280;
+      --border:       #d1d9e0;
+      --red:          #dc2626;
+      --red-light:    #fee2e2;
+      --amber:        #d97706;
+      --amber-light:  #fef3c7;
+      --green:        #16a34a;
+      --green-light:  #dcfce7;
+      --orange:       #c2410c;
+      --orange-light: #ffedd5;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    html, body {
+      background: #ffffff !important;
+      color: #1a2035 !important;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      background: #ffffff !important;
+      color: #1a2035 !important;
+      min-height: 100vh;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+    /* White root wrapper — overrides any Duda parent background bleeding through */
+    #diq-root {
+      background: #ffffff !important;
+      color: #1a2035 !important;
+      min-height: 100vh;
+      font-family: Arial, sans-serif;
+      font-size: 15px;
+    }
+
+    /* ════════════════════════════════════════════════════════════
+       HEADER / NAV
+    ════════════════════════════════════════════════════════════ */
+    .site-header {
+      background: var(--navy);
+      padding: 0 2rem;
+      height: 70px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.3);
+    }
+    .header-brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .header-logo-text {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--gold);
+      letter-spacing: -0.3px;
+    }
+    .header-logo-text span {
+      color: #fff;
+      font-weight: 300;
+    }
+    .header-tagline {
+      font-size: 11px;
+      color: var(--text-light);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+    }
+    .header-powered {
+      font-size: 12px;
+      color: var(--text-light);
+    }
+    .header-powered a {
+      color: var(--gold);
+      text-decoration: none;
+    }
+
+    /* ════════════════════════════════════════════════════════════
+       TAB BAR
+    ════════════════════════════════════════════════════════════ */
+    .tab-bar {
+      background: var(--navy-mid);
+      display: flex;
+      padding: 0 2rem;
+      gap: 4px;
+    }
+    .tab-btn {
+      background: none;
+      border: none;
+      color: var(--text-light);
+      font-family: Arial, sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 14px 20px;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      transition: color 0.2s, border-color 0.2s;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+    .tab-btn:hover { color: #fff; }
+    .tab-btn.active { color: var(--gold); border-bottom-color: var(--gold); }
+    .diq-panel { display: none; }
+    .diq-panel.active { display: block; }
+
+    /* ════════════════════════════════════════════════════════════
+       API TESTER RESULTS
+    ════════════════════════════════════════════════════════════ */
+    .api-section {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 1rem;
+    }
+    .api-section h3 {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--navy);
+      margin-bottom: 1rem;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    .api-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .api-table th {
+      background: var(--navy);
+      color: #fff;
+      padding: 8px 12px;
+      text-align: left;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+    }
+    .api-table td { padding: 8px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    .api-table tr:last-child td { border-bottom: none; }
+    .api-table td.field-name { font-family: monospace; color: var(--text-light); font-size: 12px; }
+    .api-table td.field-note { font-size: 11px; color: var(--text-light); }
+    .api-val-ok   { font-weight: 700; color: var(--green); }
+    .api-val-zero { font-weight: 700; color: var(--red); }
+    .api-val-derived { font-weight: 700; color: var(--navy); }
+    .api-raw-pre {
+      font-size: 11px;
+      font-family: monospace;
+      background: #f3f4f6;
+      border-radius: 8px;
+      padding: 1rem;
+      overflow-x: auto;
+      color: var(--text);
+      white-space: pre-wrap;
+      word-break: break-all;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    /* ════════════════════════════════════════════════════════════
+       BANK NAME AUTOCOMPLETE SEARCH
+    ════════════════════════════════════════════════════════════ */
+    .bank-search-wrap {
+      position: relative;
+      max-width: 480px;
+      margin-bottom: 1.25rem;
+    }
+    .bank-search-input {
+      width: 100%;
+      padding: 12px 16px;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      font-family: Arial, sans-serif;
+      font-size: 15px;
+      color: var(--text);
+      background: #fff;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .bank-search-input::placeholder { color: var(--text-light); }
+    .bank-search-input:focus { border-color: var(--gold); }
+
+    /* Autocomplete */
+    .ac-dropdown {
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      right: 0;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+      z-index: 50;
+      overflow: hidden;
+      display: none;
+    }
+    .ac-item {
+      padding: 12px 16px;
+      cursor: pointer;
+      font-size: 14px;
+      color: var(--text);
+      border-bottom: 1px solid var(--border);
+      transition: background 0.15s;
+    }
+    .ac-item:last-child { border-bottom: none; }
+    .ac-item:hover { background: #f3f4f6; }
+    .ac-item strong { color: var(--navy); }
+    .ac-item small { color: var(--text-light); margin-left: 6px; }
+
+    /* ════════════════════════════════════════════════════════════
+       LOADING
+    ════════════════════════════════════════════════════════════ */
+    #loadingIndicator {
+      display: none;
+      text-align: center;
+      padding: 4rem 2rem;
+    }
+    .spinner {
+      width: 44px; height: 44px;
+      border: 4px solid var(--border);
+      border-top-color: var(--gold);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 1rem;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-text { color: var(--text-light); font-size: 14px; }
+
+    /* ════════════════════════════════════════════════════════════
+       REPORT OUTPUT
+    ════════════════════════════════════════════════════════════ */
+    #reportOutput { display: none; }
+
+    .report-wrap {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem 2rem 4rem;
+    }
+
+    /* Report header bar */
+    .report-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 1.5rem;
+    }
+    .report-title { font-size: 1.5rem; font-weight: 700; color: var(--navy); }
+    .report-sub { font-size: 13px; color: var(--text-light); margin-top: 2px; }
+    .btn-export {
+      background: var(--navy);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 10px 22px;
+      font-family: Arial, sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      letter-spacing: 0.3px;
+      transition: background 0.2s;
+    }
+    .btn-export:hover { background: var(--navy-light); }
+
+    /* Pressure zone banner */
+    .zone-banner {
+      border-radius: 12px;
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .zone-banner.zone-low    { background: var(--green-light); border-left: 5px solid var(--green); }
+    .zone-banner.zone-mod    { background: var(--amber-light); border-left: 5px solid var(--amber); }
+    .zone-banner.zone-high   { background: var(--orange-light); border-left: 5px solid var(--orange); }
+    .zone-banner.zone-crit   { background: var(--red-light); border-left: 5px solid var(--red); }
+    .zone-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; }
+    .zone-banner.zone-low  .zone-label { color: var(--green); }
+    .zone-banner.zone-mod  .zone-label { color: var(--amber); }
+    .zone-banner.zone-high .zone-label { color: var(--orange); }
+    .zone-banner.zone-crit .zone-label { color: var(--red); }
+    .zone-desc { font-size: 14px; color: var(--text); }
+
+    /* Balance snapshot bar */
+    .balance-snap {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 10px;
+      margin-bottom: 1.5rem;
+    }
+    @media (max-width: 900px) { .balance-snap { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 600px) { .balance-snap { grid-template-columns: repeat(2, 1fr); } }
+    .balance-snap-cell {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      text-align: center;
+    }
+    .balance-snap-cell .bs-label { font-size: 11px; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+    .balance-snap-cell .bs-value { font-size: 15px; font-weight: 700; color: var(--navy); }
+
+    /* KPI tiles */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+      margin-bottom: 1.5rem;
+    }
+    @media (max-width: 900px) { .kpi-grid { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 600px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+
+    .kpi-tile {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem;
+      text-align: center;
+      box-shadow: 0 1px 4px rgba(10,22,40,0.08), 0 3px 10px rgba(10,22,40,0.05);
+    }
+    .kpi-label { font-size: 11px; color: var(--text-light); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+    .kpi-value { font-size: 1.5rem; font-weight: 700; color: var(--navy); }
+    .kpi-sub   { font-size: 11px; color: var(--text-mid); margin-top: 4px; }
+    .kpi-tile.kpi-red    { border-top: 3px solid var(--red); }
+    .kpi-tile.kpi-orange { border-top: 3px solid var(--orange); }
+    .kpi-tile.kpi-amber  { border-top: 3px solid var(--amber); }
+    .kpi-tile.kpi-green  { border-top: 3px solid var(--green); }
+
+    /* Gauge + radar row */
+    .gauge-radar-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 1.5rem;
+    }
+    @media (max-width: 700px) { .gauge-radar-row { grid-template-columns: 1fr; } }
+
+    .card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.5rem;
+      box-shadow: 0 1px 4px rgba(10,22,40,0.08), 0 4px 16px rgba(10,22,40,0.06);
+    }
+    .card-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--navy);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 1rem;
+    }
+
+    /* Gauge SVG */
+    .gauge-wrap { display: flex; flex-direction: column; align-items: center; }
+    .gauge-score-label { font-size: 2.5rem; font-weight: 700; color: var(--navy); margin-top: -8px; }
+    .gauge-zone-label  { font-size: 13px; font-weight: 600; margin-top: 4px; }
+
+    /* Exec summary */
+    .exec-summary {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-left: 5px solid var(--gold);
+      border-radius: 0 12px 12px 0;
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 1.5rem;
+      font-size: 14px;
+      line-height: 1.8;
+      color: var(--text);
+      box-shadow: 0 2px 8px rgba(10,22,40,0.06);
+    }
+    .exec-summary strong { color: var(--navy); }
+
+    /* Section headers */
+    .section-head {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--navy);
+      margin-bottom: 1rem;
+      padding-bottom: 8px;
+      border-bottom: 2px solid var(--border);
+    }
+    .section-head::after { content: " ---"; color: var(--gold); }
+
+    /* ── DRIVER CARDS ── */
+    .driver-cards-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      margin-bottom: 1.5rem;
+    }
+    @media (max-width: 900px) { .driver-cards-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 600px) { .driver-cards-grid { grid-template-columns: 1fr; } }
+
+    .driver-card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      cursor: pointer;
+      transition: box-shadow 0.2s, transform 0.15s;
+      overflow: hidden;
+      display: flex;
+      box-shadow: 0 2px 12px rgba(10,22,40,0.07);
+    }
+    .driver-card:hover { box-shadow: 0 6px 24px rgba(10,22,40,0.15); transform: translateY(-2px); }
+    .driver-card-severity { width: 5px; flex-shrink: 0; }
+    .severity-red    { background: var(--red); }
+    .severity-orange { background: var(--orange); }
+    .severity-amber  { background: var(--amber); }
+    .severity-green  { background: var(--green); }
+    .driver-card-body { padding: 1.25rem; flex: 1; }
+    .driver-card-icon { font-size: 24px; margin-bottom: 8px; }
+    .driver-card-title  { font-size: 14px; font-weight: 600; color: var(--navy); margin-bottom: 4px; }
+    .driver-card-metric { font-size: 13px; font-weight: 500; color: var(--text-mid); margin-bottom: 6px; }
+    .driver-card-teaser { font-size: 12px; color: var(--text-light); line-height: 1.5; }
+    .driver-card-expand-hint { font-size: 10px; color: var(--gold); margin-top: 10px; font-weight: 600; }
+
+    /* ── MODAL ── */
+    .driver-modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(10,22,40,0.6);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+    .driver-modal {
+      background: var(--white);
+      border-radius: 20px;
+      max-width: 720px;
+      width: 100%;
+      max-height: 85vh;
+      overflow-y: auto;
+      padding: 2.5rem;
+      position: relative;
+    }
+    .modal-close {
+      position: absolute;
+      top: 1.25rem;
+      right: 1.25rem;
+      background: none;
+      border: none;
+      font-size: 18px;
+      cursor: pointer;
+      color: var(--text-light);
+      transition: color 0.15s;
+    }
+    .modal-close:hover { color: var(--navy); }
+    .modal-severity-bar { height: 5px; border-radius: 3px; margin-bottom: 1.5rem; }
+    .modal-header { display: flex; gap: 14px; align-items: flex-start; margin-bottom: 1.25rem; }
+    .modal-icon { font-size: 32px; }
+    .modal-title { font-size: 22px; font-weight: 700; color: var(--navy); margin-bottom: 6px; }
+    .modal-badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      padding: 3px 10px;
+      border-radius: 100px;
+    }
+    .badge-red    { background: var(--red-light);    color: var(--red); }
+    .badge-orange { background: var(--orange-light); color: var(--orange); }
+    .badge-amber  { background: var(--amber-light);  color: var(--amber); }
+    .badge-green  { background: var(--green-light);  color: var(--green); }
+
+    .modal-metric-box {
+      background: #f3f4f6;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 1.25rem;
+    }
+    .metric-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .metric-table td { padding: 6px 8px; border-bottom: 1px solid var(--border); }
+    .metric-table tr:last-child td { border-bottom: none; }
+    .metric-table td:first-child { color: var(--text-light); }
+    .metric-table td:last-child  { font-weight: 600; color: var(--navy); text-align: right; }
+    .metric-table td.highlight   { color: var(--red); font-size: 15px; }
+    .metric-table td.alert       { color: var(--orange); }
+
+    .modal-narrative {
+      font-size: 14px;
+      line-height: 1.8;
+      color: var(--text);
+      margin-bottom: 1.25rem;
+    }
+    .modal-narrative p { margin-bottom: 0.85rem; }
+    .modal-implication {
+      background: #EFF6FF;
+      border-left: 4px solid var(--navy);
+      border-radius: 0 10px 10px 0;
+      padding: 1rem 1.25rem;
+      font-size: 13px;
+      line-height: 1.7;
+    }
+    .modal-implication h3 {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--navy);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+
+    /* ── RECOMMENDATIONS ── */
+    .recs-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-bottom: 1.5rem;
+    }
+    @media (max-width: 900px) { .recs-grid { grid-template-columns: 1fr; } }
+
+    .rec-card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.25rem;
+      box-shadow: 0 2px 8px rgba(10,22,40,0.06);
+    }
+    .rec-num {
+      width: 28px; height: 28px;
+      background: var(--navy);
+      color: #fff;
+      border-radius: 50%;
+      font-size: 13px;
+      font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 10px;
+    }
+    .rec-title { font-size: 14px; font-weight: 700; color: var(--navy); margin-bottom: 6px; }
+    .rec-body  { font-size: 13px; color: var(--text-mid); line-height: 1.65; }
+
+    /* ── CHARTS ── */
+    .charts-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 1.5rem;
+    }
+    @media (max-width: 700px) { .charts-row { grid-template-columns: 1fr; } }
+
+    .chart-container { position: relative; height: 240px; }
+    .chart-print-img { display: none; width: 100%; }
+
+    /* ════════════════════════════════════════════════════════════
+       PRESSURE SCANNER TAB
+    ════════════════════════════════════════════════════════════ */
+    .scanner-wrap {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+    .scanner-head {
+      margin-bottom: 1.5rem;
+    }
+    .scanner-head h2 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--navy);
+      margin-bottom: 6px;
+    }
+    .scanner-head p { font-size: 14px; color: var(--text-mid); }
+
+    .scanner-filters {
+      background: #f3f4f6;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.25rem 1.5rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      align-items: flex-end;
+      margin-bottom: 1.5rem;
+    }
+    .filter-group { display: flex; flex-direction: column; gap: 5px; }
+    .filter-group label { font-size: 11px; font-weight: 600; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.8px; }
+    .filter-group select,
+    .filter-group input {
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-family: Arial, sans-serif;
+      font-size: 13px;
+      color: var(--text);
+      background: #fff;
+      outline: none;
+    }
+    .filter-group select:focus,
+    .filter-group input:focus { border-color: var(--gold); }
+
+    .btn-scan {
+      background: var(--gold);
+      color: var(--navy);
+      border: none;
+      border-radius: 8px;
+      padding: 10px 24px;
+      font-family: Arial, sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s;
+      align-self: flex-end;
+    }
+    .btn-scan:hover { background: var(--gold-light); }
+
+    .scanner-status {
+      font-size: 13px;
+      color: var(--text-light);
+      margin-bottom: 1rem;
+      min-height: 20px;
+    }
+
+    .scanner-table-wrap { overflow-x: auto; }
+
+    .scanner-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    .scanner-table th {
+      background: var(--navy);
+      color: #fff;
+      padding: 10px 14px;
+      text-align: left;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      white-space: nowrap;
+    }
+    .sortable-th {
+      cursor: pointer;
+      user-select: none;
+    }
+    .sortable-th:hover { background: var(--navy-light); }
+    .sort-ind { color: var(--gold); font-size: 10px; margin-left: 3px; }
+    .scanner-table td {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+      vertical-align: middle;
+    }
+    .scanner-table tr:hover td { background: #f3f4f6; }
+
+    .score-badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 100px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .score-low  { background: var(--green-light);  color: var(--green); }
+    .score-mod  { background: var(--amber-light);  color: var(--amber); }
+    .score-high { background: var(--orange-light); color: var(--orange); }
+    .score-crit { background: var(--red-light);    color: var(--red); }
+
+    .driver-icons span { font-size: 14px; }
+    .driver-icon-inactive { filter: grayscale(1); opacity: 0.3; }
+
+    .btn-view-report {
+      background: var(--navy);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 6px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+      white-space: nowrap;
+    }
+    .btn-view-report:hover { background: var(--navy-light); }
+
+    /* ════════════════════════════════════════════════════════════
+       PRINT / PDF STYLES
+    ════════════════════════════════════════════════════════════ */
+    #printHeader {
+      display: none;
+    }
+
+    #pdfDriversContainer { display: none; }
+
+    @media print {
+      /* ── suppress browser URL/date headers and footers ── */
+      @page {
+        margin: 1.2cm 1.5cm;
+        /* page numbers via CSS counter */
+      }
+      @page :first { margin-top: 1.5cm; }
+
+      body { background: #fff; font-size: 10pt; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+      /* Hide all UI chrome */
+      .site-header,
+      .tab-bar,
+      .btn-export,
+      .driver-card-expand-hint,
+      .scanner-controls,
+      .bank-search-wrap,
+      #loadingIndicator,
+      #panel-apitester,
+      .report-header .btn-export { display: none !important; }
+
+      /* Single-bank report print */
+      body.printing-report #reportOutput { display: block !important; }
+      body.printing-report #panel-scanner { display: block !important; }
+
+      /* ── Bank Intelligence branded print header (first page only) ── */
+      #printHeader {
+        display: flex !important;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 0 1rem 0;
+        border-bottom: 3px solid #0a1628;
+        margin-bottom: 1.5rem;
+      }
+      .print-logo {
+        font-size: 20pt;
+        font-weight: 700;
+        color: #0a1628;
+        letter-spacing: -0.5px;
+      }
+      .print-logo span { color: #c9a84c; }
+      .print-logo-sub {
+        font-size: 9pt;
+        color: #8896a8;
+        margin-top: 3px;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+      }
+      .print-bank-name {
+        font-size: 13pt;
+        font-weight: 700;
+        color: #0a1628;
+        text-align: right;
+      }
+      .print-bank-sub {
+        font-size: 9pt;
+        color: #8896a8;
+        text-align: right;
+        margin-top: 2px;
+      }
+
+      /* ── Page numbers via CSS counter ── */
+      body { counter-reset: page-counter; }
+      .page-break {
+        page-break-before: always;
+        counter-increment: page-counter;
+      }
+      .page-break::after {
+        content: counter(page-counter);
+        display: none; /* numbers handled by @page if supported, else omit */
+      }
+
+      /* Running footer with page number — supported in some browsers */
+      .pdf-page-footer {
+        position: running(footer);
+        font-size: 8pt;
+        color: #8896a8;
+        text-align: center;
+        border-top: 1px solid #e2e8f0;
+        padding-top: 6px;
+      }
+      @page { @bottom-center { content: "Bank Call Report Analyzer  ·  FDIC Call Report Data  ·  Page " counter(page); font-size: 8pt; color: #8896a8; } }
+
+      /* ── Prevent charts from splitting across pages ── */
+      .gauge-radar-row,
+      .charts-row,
+      .card,
+      .kpi-grid,
+      .balance-snap,
+      .recs-grid { page-break-inside: avoid; break-inside: avoid; }
+
+      /* Charts: show static images, hide canvases */
+      .chart-container canvas { display: none !important; }
+      .chart-print-img {
+        display: block !important;
+        width: 100% !important;
+        max-height: 220px;
+        object-fit: contain;
+      }
+
+      /* Keep gauge + radar visible */
+      .gauge-radar-row { display: grid !important; grid-template-columns: 1fr 1fr; gap: 16px; }
+      .charts-row { display: grid !important; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+      /* ── PDF Driver Sections ── */
+      #pdfDriversContainer { display: block !important; }
+      .pdf-driver-section { padding: 0; page-break-inside: avoid; break-inside: avoid; }
+      .pdf-driver-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 1rem 0;
+        border-bottom: 2px solid #e2e8f0;
+        margin-bottom: 1.25rem;
+      }
+      .pdf-driver-header h2 { font-size: 15pt; color: #0a1628; }
+      .pdf-driver-icon { font-size: 22pt; }
+      .pdf-metric-box {
+        background: #F8FAFC !important;
+        border: 1px solid #E2E8F0;
+        border-radius: 6px;
+        padding: 0.85rem;
+        margin-bottom: 1.1rem;
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
+      .pdf-metric-table { width: 100%; border-collapse: collapse; font-size: 10pt; }
+      .pdf-metric-table td { padding: 5px 8px; border-bottom: 1px solid #E2E8F0; }
+      .pdf-metric-table tr:last-child td { border-bottom: none; }
+      .pdf-metric-table td:last-child { font-weight: 700; text-align: right; }
+      .pdf-narrative { font-size: 10pt; line-height: 1.75; margin-bottom: 1.1rem; }
+      .pdf-narrative p { margin-bottom: 0.65rem; }
+      .pdf-implication {
+        background: #EFF6FF !important;
+        padding: 0.85rem;
+        border-radius: 6px;
+        border-left: 4px solid #0A1628;
+        font-size: 10pt;
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
+      .pdf-implication h3 { font-size: 9pt; font-weight: 700; margin-bottom: 6px; text-transform: uppercase; }
+
+      .driver-modal-overlay { display: none !important; }
+
+      /* Exec summary and zone banner — no page break inside */
+      .exec-summary, .zone-banner { page-break-inside: avoid; break-inside: avoid; }
+
+      /* Compare PDF print */
+      body.printing-compare .compare-chart-card, body.printing-compare .compare-charts-grid { page-break-inside: avoid; break-inside: avoid; }
+      body.printing-compare .compare-charts-grid { display: grid !important; grid-template-columns: 1fr 1fr; gap: 16px; }
+      body.printing-compare .compare-chart-card .chart-container canvas { display: none !important; }
+      body.printing-compare .compare-chart-card .chart-print-img { display: block !important; width: 100% !important; max-height: 220px; object-fit: contain; }
+      body.printing-compare #compareNarratives .cmp-bank-narrative { page-break-inside: avoid; break-inside: avoid; }
+      body.printing-compare #panel-compare { display: block !important; }
+      body.printing-compare #panel-compare .scanner-head,
+      body.printing-compare #panel-compare .compare-queue-bar,
+      body.printing-compare #panel-compare .report-header .btn-export,
+      body.printing-compare #compareStatus { display: none !important; }
+      body.printing-compare #compareOutput { display: block !important; }
+      body.printing-compare #comparePrintHeader { display: flex !important; align-items: center; justify-content: space-between; padding: 0 0 1rem 0; border-bottom: 3px solid #0a1628; margin-bottom: 1.5rem; }
+    }
+  </style>
+
+  <style>
+    /* ════════════════════════════════════════════════════════════
+       TOOLTIP
+    ════════════════════════════════════════════════════════════ */
+    #diq-tooltip {
+      position: fixed;
+      background: #0a1628;
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      max-width: 220px;
+      z-index: 9999;
+      pointer-events: none;
+      line-height: 1.5;
+      opacity: 0;
+      transition: opacity 0.15s;
+      text-align: left;
+    }
+
+    /* ════════════════════════════════════════════════════════════
+       COMPARE FEATURE
+    ════════════════════════════════════════════════════════════ */
+    .btn-compare {
+      background: var(--navy-light);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+      white-space: nowrap;
+    }
+    .btn-compare:hover { background: var(--gold); color: var(--navy); }
+    .btn-compare.in-compare { background: var(--gold); color: var(--navy); }
+    .btn-clear-compare {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 14px;
+      font-size: 13px;
+      cursor: pointer;
+      color: var(--text-mid);
+    }
+    .compare-queue-bar {
+      background: #f3f4f6;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 1.25rem;
+      flex-wrap: wrap;
+    }
+    .compare-queue-banks {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      flex: 1;
+    }
+    .compare-queue-chip {
+      background: var(--navy);
+      color: #fff;
+      border-radius: 100px;
+      padding: 4px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .compare-queue-chip button {
+      background: none; border: none; color: rgba(255,255,255,0.6);
+      cursor: pointer; font-size: 14px; padding: 0; line-height: 1;
+    }
+    .compare-queue-chip button:hover { color: #fff; }
+    .compare-charts-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 1.5rem;
+    }
+    @media (max-width: 700px) { .compare-charts-grid { grid-template-columns: 1fr; } }
+    .compare-chart-card .chart-container { height: 220px; }
+    .cmp-bank-narrative {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-left: 5px solid var(--gold);
+      border-radius: 0 12px 12px 0;
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 1rem;
+    }
+    .cmp-bank-narrative h3 { font-size: 15px; font-weight: 700; color: var(--navy); margin-bottom: 6px; }
+    .cmp-bank-narrative .cmp-zone-badge {
+      display: inline-block;
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 1px; padding: 2px 10px; border-radius: 100px;
+      margin-bottom: 10px;
+    }
+    .cmp-bank-narrative p { font-size: 13px; line-height: 1.7; color: var(--text); margin-bottom: 0.5rem; }
+
+    /* ════════════════════════════════════════════════════════════
+       EDUCATION TAB
+    ════════════════════════════════════════════════════════════ */
+    .edu-section {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.5rem;
+      margin-bottom: 1.25rem;
+      box-shadow: 0 1px 4px rgba(10,22,40,0.06);
+    }
+    .edu-section-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--navy);
+      margin-bottom: 0.75rem;
+      padding-bottom: 8px;
+      border-bottom: 2px solid var(--border);
+    }
+    .edu-body { font-size: 14px; color: var(--text); line-height: 1.75; margin-bottom: 1rem; }
+    .edu-body code { background: #f3f4f6; padding: 1px 6px; border-radius: 4px; font-size: 12px; }
+    .edu-score-diagram {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-top: 1rem;
+    }
+    @media (max-width: 800px) { .edu-score-diagram { grid-template-columns: 1fr 1fr; } }
+    .edu-score-col {
+      border: 2px solid;
+      border-radius: 12px;
+      padding: 1rem;
+      text-align: center;
+    }
+    .edu-score-range { font-size: 1.4rem; font-weight: 700; margin-bottom: 8px; }
+    .edu-score-zone {
+      font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
+      padding: 4px 10px; border-radius: 100px; display: inline-block; margin-bottom: 10px;
+    }
+    .edu-score-desc { font-size: 12px; color: var(--text-mid); line-height: 1.6; }
+    .edu-drivers-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-top: 1rem;
+    }
+    @media (max-width: 700px) { .edu-drivers-grid { grid-template-columns: 1fr; } }
+    .edu-driver-card {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem;
+      background: #f9fafb;
+    }
+    .edu-driver-header { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 8px; }
+    .edu-driver-icon { font-size: 22px; }
+    .edu-driver-name { font-size: 14px; font-weight: 700; color: var(--navy); }
+    .edu-driver-field { font-size: 11px; color: var(--text-light); margin-top: 2px; }
+    .edu-driver-formula {
+      font-family: monospace; font-size: 11px; background: #e8edf2;
+      border-radius: 6px; padding: 6px 10px; margin-bottom: 8px; color: var(--navy);
+    }
+    .edu-driver-desc { font-size: 12px; color: var(--text-mid); line-height: 1.6; margin-bottom: 10px; }
+    .edu-thresh-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .edu-thresh-table th { background: var(--navy); color: #fff; padding: 5px 8px; font-size: 10px; text-align: left; font-weight: 600; text-transform: uppercase; }
+    .edu-thresh-table td { padding: 5px 8px; border-bottom: 1px solid var(--border); }
+    .edu-thresh-table tr:last-child td { border-bottom: none; }
+  </style>
+</head>
+<body>
+
+  <div id="diq-root">
+
+  <!-- ═══════════════════════════════════════════ HEADER -->
+  <header class="site-header">
+    <div class="header-brand">
+      <div>
+        <div class="header-logo-text">Bank Call Report<span> Analyzer</span></div>
+        <div class="header-tagline">FDIC Call Report Analysis</div>
+      </div>
+    </div>
+    <div class="header-powered">
+      Powered by FDIC Call Report Data
+    </div>
+  </header>
+
+  <!-- ═══════════════════════════════════════════ TAB BAR -->
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tab-scanner" onclick="switchTab('scanner')">Pressure Scanner</button>
+    <button class="tab-btn" id="tab-compare" onclick="switchTab('compare')">Compare Banks</button>
+    <button class="tab-btn" id="tab-education" onclick="switchTab('education')">How It Works</button>
+    <button class="tab-btn" id="tab-apitester" onclick="switchTab('apitester')">API Field Tester</button>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ PANEL: PRESSURE SCANNER -->
+  <div class="diq-panel active" id="panel-scanner">
+  <div class="scanner-wrap">
+
+    <div class="scanner-head">
+      <h2>Pressure Scanner</h2>
+      <p>Search for a bank by name, or scan FDIC-insured institutions by funding pressure zone, state, and asset size.</p>
+    </div>
+
+    <!-- Bank name autocomplete search -->
+    <div class="bank-search-wrap">
+      <input
+        class="bank-search-input"
+        id="searchInput"
+        type="text"
+        placeholder="Search for a bank by name…"
+        autocomplete="off"
+        oninput="onSearchInput(this.value)"
+        onkeydown="handleSearchKey(event)"
+      >
+      <div class="ac-dropdown" id="acDropdown"></div>
+    </div>
+
+    <!-- Compare queue bar (shown when banks are selected) -->
+    <div id="scannerCompareBar" style="display:none;background:var(--navy-mid);border-radius:10px;padding:0.75rem 1.25rem;margin-bottom:1rem;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+      <div style="color:#fff;font-size:13px;font-weight:600">Banks selected for comparison: <span id="scannerCompareCount" style="color:var(--gold)">0</span></div>
+      <button class="btn-scan" style="padding:8px 18px;font-size:13px" onclick="switchTab('compare');runComparison()">Compare Now →</button>
+    </div>
+
+    <!-- Scanner controls (hidden in print) -->
+    <div class="scanner-controls">
+      <div class="scanner-filters">
+        <div class="filter-group">
+          <label>Pressure Zone</label>
+          <select id="filterZone">
+            <option value="">All Banks</option>
+            <option value="crit">Intense Pressure</option>
+            <option value="high">High Pressure</option>
+            <option value="mod">Moderate Pressure</option>
+            <option value="low">Low Pressure</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>State</label>
+          <select id="filterState">
+            <option value="">All States</option>
+            <option>AL</option><option>AK</option><option>AZ</option><option>AR</option>
+            <option>CA</option><option>CO</option><option>CT</option><option>DE</option>
+            <option>FL</option><option>GA</option><option>HI</option><option>ID</option>
+            <option>IL</option><option>IN</option><option>IA</option><option>KS</option>
+            <option>KY</option><option>LA</option><option>ME</option><option>MD</option>
+            <option>MA</option><option>MI</option><option>MN</option><option>MS</option>
+            <option>MO</option><option>MT</option><option>NE</option><option>NV</option>
+            <option>NH</option><option>NJ</option><option>NM</option><option>NY</option>
+            <option>NC</option><option>ND</option><option>OH</option><option>OK</option>
+            <option>OR</option><option>PA</option><option>RI</option><option>SC</option>
+            <option>SD</option><option>TN</option><option>TX</option><option>UT</option>
+            <option>VT</option><option>VA</option><option>WA</option><option>WV</option>
+            <option>WI</option><option>WY</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>Min Assets ($M)</label>
+          <input type="number" id="filterMinAsset" placeholder="e.g. 100" style="width:120px">
+        </div>
+        <div class="filter-group">
+          <label>Max Assets ($M)</label>
+          <input type="number" id="filterMaxAsset" placeholder="e.g. 2000" style="width:120px">
+        </div>
+        <button class="btn-scan" onclick="runScanner()">Run Scanner</button>
+      </div>
+
+      <div class="scanner-status" id="scannerStatus"></div>
+      <div class="scanner-table-wrap">
+        <table class="scanner-table" id="scannerTable">
+          <thead>
+            <tr>
+              <th class="sortable-th" onclick="sortScanner('name')" id="th-name">Bank Name <span class="sort-ind"></span></th>
+              <th class="sortable-th" onclick="sortScanner('state')" id="th-state">State <span class="sort-ind"></span></th>
+              <th class="sortable-th" onclick="sortScanner('asset')" id="th-asset">Assets <span class="sort-ind"></span></th>
+              <th class="sortable-th" onclick="sortScanner('score')" id="th-score">Score <span class="sort-ind">▼</span></th>
+              <th class="sortable-th" onclick="sortScanner('zone')" id="th-zone">Zone <span class="sort-ind"></span></th>
+              <th class="sortable-th" onclick="sortScanner('drivers')" id="th-drivers">Active Drivers <span class="sort-ind"></span></th>
+              <th>Driver Icons</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="scannerBody"></tbody>
+        </table>
+      </div>
+    </div><!-- /scanner-controls -->
+
+    <!-- Loading -->
+    <div id="loadingIndicator">
+      <div class="spinner"></div>
+      <div class="loading-text">Fetching FDIC data…</div>
+    </div>
+
+    <!-- Report Output -->
+    <div id="reportOutput">
+
+      <!-- PDF print header (screen-hidden, print-shown) -->
+      <div id="printHeader">
+        <div>
+          <div class="print-logo">Bank Call Report <span>Analyzer</span></div>
+          <div class="print-logo-sub">Powered by FDIC Call Report Data</div>
+        </div>
+        <div>
+          <div class="print-bank-name" id="printBankName"></div>
+          <div class="print-bank-sub">Funding Pressure Analysis · FDIC Call Report Data</div>
+        </div>
+      </div>
+
+      <div class="report-wrap">
+
+        <!-- Report header row -->
+        <div class="report-header">
+          <div>
+            <div class="report-title" id="reportBankName"></div>
+            <div class="report-sub" id="reportBankMeta"></div>
+          </div>
+          <button class="btn-export" onclick="exportPDF()">⬇ Export PDF Report</button>
+        </div>
+
+        <!-- Zone banner -->
+        <div class="zone-banner" id="zoneBanner">
+          <div>
+            <div class="zone-label" id="zoneLabel"></div>
+            <div class="zone-desc" id="zoneDesc"></div>
+          </div>
+        </div>
+
+        <!-- KPI tiles -->
+        <div class="kpi-grid" id="kpiGrid"></div>
+
+        <!-- Balance sheet dollar snapshot -->
+        <div class="balance-snap" id="balanceSnap"></div>
+
+        <!-- Gauge + Radar -->
+        <div class="gauge-radar-row">
+          <div class="card">
+            <div class="card-title">Funding Pressure Score</div>
+            <div class="gauge-wrap">
+              <svg id="gaugeSvg" viewBox="0 0 200 120" width="200" height="120">
+                <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="#e2e8f0" stroke-width="14" stroke-linecap="round"/>
+                <path id="gaugeArc" d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="#16a34a" stroke-width="14" stroke-linecap="round" stroke-dasharray="251" stroke-dashoffset="251"/>
+                <line id="gaugeNeedle" x1="100" y1="100" x2="100" y2="28" stroke="#0a1628" stroke-width="3" stroke-linecap="round"/>
+                <circle cx="100" cy="100" r="5" fill="#0a1628"/>
+              </svg>
+              <div class="gauge-score-label" id="gaugeScore">--</div>
+              <div class="gauge-zone-label" id="gaugeZone"></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Pressure Radar</div>
+            <div class="chart-container">
+              <canvas id="radarChart"></canvas>
+              <img class="chart-print-img" id="radarChart-print" src="" alt="Radar Chart">
+            </div>
+          </div>
+        </div>
+
+        <!-- Executive Summary -->
+        <div class="section-head">Executive Summary</div>
+        <div class="exec-summary" id="execSummary"></div>
+
+        <!-- Driver Cards -->
+        <div class="section-head">Pressure Drivers</div>
+        <div class="driver-cards-grid" id="driverCardsGrid"></div>
+
+        <!-- Recommendations -->
+        <div class="section-head">Strategic Recommendations</div>
+        <div class="recs-grid" id="recsGrid"></div>
+
+        <!-- Charts -->
+        <div class="section-head">Deposit Mix &amp; Trend Data</div>
+        <div class="charts-row">
+          <div class="card">
+            <div class="card-title">Cost of Funds Trend (8Q)</div>
+            <div class="chart-container">
+              <canvas id="cofChart"></canvas>
+              <img class="chart-print-img" id="cofChart-print" src="" alt="COF Trend">
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Deposit Mix</div>
+            <div class="chart-container">
+              <canvas id="mixChart"></canvas>
+              <img class="chart-print-img" id="mixChart-print" src="" alt="Deposit Mix">
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /report-wrap -->
+
+      <!-- PDF Driver Sections (print-only) -->
+      <div id="pdfDriversContainer"></div>
+
+    </div><!-- /reportOutput -->
+
+  </div><!-- /scanner-wrap -->
+  </div><!-- /panel-scanner -->
+
+  <!-- ═══════════════════════════════════════════ PANEL: API FIELD TESTER -->
+  <div class="diq-panel" id="panel-apitester">
+    <div class="scanner-wrap">
+
+      <div class="scanner-head">
+        <h2>API Field Tester</h2>
+        <p>Search for any FDIC-insured bank and inspect the raw field values returned by the FDIC API. Use this to verify data quality and confirm field calculations.</p>
+      </div>
+
+      <div class="bank-search-wrap">
+        <input
+          class="bank-search-input"
+          id="apiSearchInput"
+          type="text"
+          placeholder="Search for a bank to inspect…"
+          autocomplete="off"
+          oninput="apiOnSearchInput(this.value)"
+        >
+        <div class="ac-dropdown" id="apiAcDropdown"></div>
+      </div>
+
+      <div class="scanner-status" id="apiStatus"></div>
+
+      <div id="apiResults"></div>
+
+    </div>
+  </div><!-- /panel-apitester -->
+
+  <!-- ═══════════════════════════════════════════ PANEL: COMPARE BANKS -->
+  <div class="diq-panel" id="panel-compare">
+    <div class="scanner-wrap">
+      <div class="scanner-head">
+        <h2>Compare Banks</h2>
+        <p>Search for banks below to add them, or use the <strong>+ Compare</strong> button in the Pressure Scanner. Add up to 5 banks, then click <strong>Compare Now</strong>.</p>
+      </div>
+
+      <!-- Direct search to add banks -->
+      <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:1.25rem;flex-wrap:wrap">
+        <div class="bank-search-wrap" style="max-width:420px;flex:1">
+          <input class="bank-search-input" id="compareSearchInput"
+            type="text" placeholder="Search for a bank to add…"
+            autocomplete="off"
+            oninput="cmpSearchInput(this.value)">
+          <div class="ac-dropdown" id="cmpAcDropdown"></div>
+        </div>
+        <div style="font-size:12px;color:var(--text-light);padding-top:14px"><span id="compareSlots">0</span> / 5 banks selected</div>
+      </div>
+
+      <!-- Queue chips + action buttons -->
+      <div id="compareQueueBar" style="display:none">
+        <div class="compare-queue-bar">
+          <div class="compare-queue-banks" id="compareQueueBanks"></div>
+          <div style="display:flex;gap:8px;align-items:center;flex-shrink:0">
+            <button class="btn-scan" onclick="runComparison()">Compare Now</button>
+            <button class="btn-clear-compare" onclick="clearCompare()">Clear All</button>
+          </div>
+        </div>
+      </div>
+      <div class="scanner-status" id="compareStatus"></div>
+      <div id="compareOutput" style="display:none">
+
+        <!-- PDF print header for compare -->
+        <div id="comparePrintHeader" style="display:none">
+          <div class="print-logo" style="font-size:20pt;font-weight:700;color:#0a1628;letter-spacing:-0.5px">Bank Call Report <span style="color:#c9a84c">Analyzer</span></div>
+          <div style="font-size:9pt;color:#8896a8;margin-top:3px;text-transform:uppercase;letter-spacing:0.5px">Bank Call Report Analyzer — Comparative Analysis</div>
+        </div>
+
+        <div class="report-header" style="margin-bottom:1.5rem">
+          <div class="report-title" id="compareTitle"></div>
+          <button class="btn-export" onclick="exportComparePDF()">⬇ Export Comparison PDF</button>
+        </div>
+
+        <!-- Comparison metrics table -->
+        <div class="section-head">Key Metrics Comparison</div>
+        <div style="overflow-x:auto;margin-bottom:1.5rem">
+          <table class="scanner-table" id="compareMetricsTable"></table>
+        </div>
+
+        <!-- Charts 2-up grid -->
+        <div class="section-head">Comparative Visualizations</div>
+        <div class="compare-charts-grid" id="compareChartsGrid">
+          <div class="card compare-chart-card">
+            <div class="card-title">Pressure Score</div>
+            <div class="chart-container"><canvas id="cmpScoreChart"></canvas><img class="chart-print-img" id="cmpScoreChart-print" src="" alt=""></div>
+          </div>
+          <div class="card compare-chart-card">
+            <div class="card-title">Cost of Funds (%)</div>
+            <div class="chart-container"><canvas id="cmpCofChart"></canvas><img class="chart-print-img" id="cmpCofChart-print" src="" alt=""></div>
+          </div>
+          <div class="card compare-chart-card">
+            <div class="card-title">Net Interest Margin (%)</div>
+            <div class="chart-container"><canvas id="cmpNimChart"></canvas><img class="chart-print-img" id="cmpNimChart-print" src="" alt=""></div>
+          </div>
+          <div class="card compare-chart-card">
+            <div class="card-title">Loan / Core Deposit Ratio</div>
+            <div class="chart-container"><canvas id="cmpLcdChart"></canvas><img class="chart-print-img" id="cmpLcdChart-print" src="" alt=""></div>
+          </div>
+          <div class="card compare-chart-card">
+            <div class="card-title">CD Concentration (%)</div>
+            <div class="chart-container"><canvas id="cmpCdChart"></canvas><img class="chart-print-img" id="cmpCdChart-print" src="" alt=""></div>
+          </div>
+          <div class="card compare-chart-card">
+            <div class="card-title">Equity / Assets (%)</div>
+            <div class="chart-container"><canvas id="cmpEqChart"></canvas><img class="chart-print-img" id="cmpEqChart-print" src="" alt=""></div>
+          </div>
+        </div>
+
+        <!-- Executive Summary -->
+        <div class="section-head">Comparative Executive Summary</div>
+        <div class="exec-summary" id="compareExecSummary"></div>
+
+        <!-- Individual Bank Narratives -->
+        <div class="section-head">Individual Bank Narratives</div>
+        <div id="compareNarratives"></div>
+
+      </div><!-- /compareOutput -->
+    </div>
+  </div><!-- /panel-compare -->
+
+  <!-- ═══════════════════════════════════════════ PANEL: HOW IT WORKS -->
+  <div class="diq-panel" id="panel-education">
+    <div class="scanner-wrap">
+      <div class="scanner-head">
+        <h2>How It Works</h2>
+        <p>A guide to the Bank Call Report Analyzer pressure scoring methodology, zone definitions, and driver calculations — all sourced from FDIC Call Report data.</p>
+      </div>
+
+      <!-- Scoring methodology -->
+      <div class="edu-section">
+        <div class="edu-section-title">The Pressure Score</div>
+        <p class="edu-body">The Bank Call Report Analyzer Pressure Score is a composite index from 0 to 100 that summarizes a bank's overall funding stress level. It is calculated by evaluating six independent pressure drivers against FDIC Call Report data. Each driver contributes 0, 10, 18, or 25 points depending on severity, and the total is capped at 100.</p>
+        <div class="edu-score-diagram">
+          <div class="edu-score-col" style="border-color:var(--green)">
+            <div class="edu-score-range" style="color:var(--green)">0 – 19</div>
+            <div class="edu-score-zone" style="background:var(--green-light);color:var(--green)">Low Pressure</div>
+            <div class="edu-score-desc">Funding fundamentals are healthy. Core deposits are strong, cost of funds is below peer median, and capital is adequate.</div>
+          </div>
+          <div class="edu-score-col" style="border-color:var(--amber)">
+            <div class="edu-score-range" style="color:var(--amber)">20 – 44</div>
+            <div class="edu-score-zone" style="background:var(--amber-light);color:var(--amber)">Moderate Pressure</div>
+            <div class="edu-score-desc">One or more funding metrics are trending toward stress. Active monitoring and proactive deposit strategy are recommended.</div>
+          </div>
+          <div class="edu-score-col" style="border-color:var(--orange)">
+            <div class="edu-score-range" style="color:var(--orange)">45 – 69</div>
+            <div class="edu-score-zone" style="background:var(--orange-light);color:var(--orange)">High Pressure</div>
+            <div class="edu-score-desc">Multiple drivers are elevated. Funding mix is imbalanced, cost of funds is above peer, or NIM is under compression. Action warranted.</div>
+          </div>
+          <div class="edu-score-col" style="border-color:var(--red)">
+            <div class="edu-score-range" style="color:var(--red)">70 – 100</div>
+            <div class="edu-score-zone" style="background:var(--red-light);color:var(--red)">Intense Pressure</div>
+            <div class="edu-score-desc">Severe funding stress across multiple dimensions. Immediate review of liquidity, deposit strategy, and ALCO oversight is warranted.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Severity points -->
+      <div class="edu-section">
+        <div class="edu-section-title">Severity Point Values</div>
+        <p class="edu-body">Each of the six drivers is rated on a four-level severity scale. Points from all six drivers are summed (maximum 150, capped at 100) to produce the final score.</p>
+        <table class="api-table" style="max-width:480px">
+          <tr><th>Severity</th><th>Points</th><th>Meaning</th></tr>
+          <tr><td style="color:var(--green);font-weight:700">Green</td><td>0</td><td style="font-size:12px;color:var(--text-light)">Within healthy range — no pressure contribution</td></tr>
+          <tr><td style="color:var(--amber);font-weight:700">Amber</td><td>10</td><td style="font-size:12px;color:var(--text-light)">Elevated — approaching stress threshold</td></tr>
+          <tr><td style="color:var(--orange);font-weight:700">Orange</td><td>18</td><td style="font-size:12px;color:var(--text-light)">Stressed — meaningfully above peer norms</td></tr>
+          <tr><td style="color:var(--red);font-weight:700">Red</td><td>25</td><td style="font-size:12px;color:var(--text-light)">Critical — significantly elevated funding risk</td></tr>
+        </table>
+      </div>
+
+      <!-- Driver definitions -->
+      <div class="edu-section">
+        <div class="edu-section-title">The Six Pressure Drivers</div>
+        <p class="edu-body">Each driver is calculated from FDIC Call Report financial data (updated quarterly). All dollar figures are in thousands as reported.</p>
+        <div class="edu-drivers-grid">
+
+          <div class="edu-driver-card">
+            <div class="edu-driver-header">
+              <span class="edu-driver-icon">💧</span>
+              <div>
+                <div class="edu-driver-name">Liquidity Stress</div>
+                <div class="edu-driver-field">Loan-to-Core Deposit Ratio</div>
+              </div>
+            </div>
+            <div class="edu-driver-formula">LNLSNET ÷ COREDEP (FDIC pre-calculated core deposits)</div>
+            <p class="edu-driver-desc">Measures how well stable, relationship-based deposits fund the loan book. A ratio above 1.0 means the bank is funding loans with wholesale or rate-sensitive deposits. Industry median: ~0.89.</p>
+            <table class="edu-thresh-table">
+              <tr><th>Threshold</th><th>Severity</th></tr>
+              <tr><td>≥ 1.10</td><td style="color:var(--red);font-weight:700">Red (25 pts)</td></tr>
+              <tr><td>1.00 – 1.09</td><td style="color:var(--orange);font-weight:700">Orange (18 pts)</td></tr>
+              <tr><td>0.85 – 0.99</td><td style="color:var(--amber);font-weight:700">Amber (10 pts)</td></tr>
+              <tr><td>&lt; 0.85</td><td style="color:var(--green);font-weight:700">Green (0 pts)</td></tr>
+            </table>
+          </div>
+
+          <div class="edu-driver-card">
+            <div class="edu-driver-header">
+              <span class="edu-driver-icon">💰</span>
+              <div>
+                <div class="edu-driver-name">Cost of Funds</div>
+                <div class="edu-driver-field">Interest Expense Rate (INTEXPY)</div>
+              </div>
+            </div>
+            <div class="edu-driver-formula">INTEXPY — pre-calculated by FDIC (EINTEXP ÷ avg assets, annualized %)</div>
+            <p class="edu-driver-desc">What the bank pays in aggregate for every dollar of assets. Elevated COF signals reliance on high-cost funding or aggressive rate competition to stem outflows. Peer median: ~1.60%.</p>
+            <table class="edu-thresh-table">
+              <tr><th>Threshold</th><th>Severity</th></tr>
+              <tr><td>≥ 2.5%</td><td style="color:var(--red);font-weight:700">Red (25 pts)</td></tr>
+              <tr><td>2.0% – 2.49%</td><td style="color:var(--orange);font-weight:700">Orange (18 pts)</td></tr>
+              <tr><td>1.5% – 1.99%</td><td style="color:var(--amber);font-weight:700">Amber (10 pts)</td></tr>
+              <tr><td>&lt; 1.5%</td><td style="color:var(--green);font-weight:700">Green (0 pts)</td></tr>
+            </table>
+          </div>
+
+          <div class="edu-driver-card">
+            <div class="edu-driver-header">
+              <span class="edu-driver-icon">⚠️</span>
+              <div>
+                <div class="edu-driver-name">Non-Core Deposit Dependency</div>
+                <div class="edu-driver-field">Non-Core % of Total Deposits</div>
+              </div>
+            </div>
+            <div class="edu-driver-formula">(DEPDOM − Core Deposits) ÷ DEPDOM × 100</div>
+            <p class="edu-driver-desc">Estimates the share of deposits that are rate-sensitive or non-relationship-based. These funds will leave for marginally better rates, creating attrition and repricing risk. Regulatory watch threshold: 20%.</p>
+            <table class="edu-thresh-table">
+              <tr><th>Threshold</th><th>Severity</th></tr>
+              <tr><td>≥ 20%</td><td style="color:var(--red);font-weight:700">Red (25 pts)</td></tr>
+              <tr><td>15% – 19.9%</td><td style="color:var(--orange);font-weight:700">Orange (18 pts)</td></tr>
+              <tr><td>8% – 14.9%</td><td style="color:var(--amber);font-weight:700">Amber (10 pts)</td></tr>
+              <tr><td>&lt; 8%</td><td style="color:var(--green);font-weight:700">Green (0 pts)</td></tr>
+            </table>
+          </div>
+
+          <div class="edu-driver-card">
+            <div class="edu-driver-header">
+              <span class="edu-driver-icon">📉</span>
+              <div>
+                <div class="edu-driver-name">NIM Compression</div>
+                <div class="edu-driver-field">Net Interest Margin (NIMY)</div>
+              </div>
+            </div>
+            <div class="edu-driver-formula">NIMY — pre-calculated by FDIC (annualized NIM as % of avg assets)</div>
+            <p class="edu-driver-desc">The spread between what a bank earns and what it pays. Community banks depend on NIM for 70–80% of revenue. Below 2.8% significantly constrains the ability to absorb credit costs. Peer median: ~3.30%.</p>
+            <table class="edu-thresh-table">
+              <tr><th>Threshold</th><th>Severity</th></tr>
+              <tr><td>&lt; 2.4%</td><td style="color:var(--red);font-weight:700">Red (25 pts)</td></tr>
+              <tr><td>2.4% – 2.79%</td><td style="color:var(--orange);font-weight:700">Orange (18 pts)</td></tr>
+              <tr><td>2.8% – 3.19%</td><td style="color:var(--amber);font-weight:700">Amber (10 pts)</td></tr>
+              <tr><td>≥ 3.2%</td><td style="color:var(--green);font-weight:700">Green (0 pts)</td></tr>
+            </table>
+          </div>
+
+          <div class="edu-driver-card">
+            <div class="edu-driver-header">
+              <span class="edu-driver-icon">⏱</span>
+              <div>
+                <div class="edu-driver-name">CD Concentration</div>
+                <div class="edu-driver-field">Time Deposits as % of Total Deposits</div>
+              </div>
+            </div>
+            <div class="edu-driver-formula">(DEP − COREDEP) ÷ DEP × 100</div>
+            <p class="edu-driver-desc">High CD concentration creates periodic repricing cliff events. CD holders are among the most rate-sensitive depositors — a bank with 40%+ of deposits in CDs is running a continuous rate auction for a large share of its funding. Peer median: ~22%.</p>
+            <table class="edu-thresh-table">
+              <tr><th>Threshold</th><th>Severity</th></tr>
+              <tr><td>≥ 50%</td><td style="color:var(--red);font-weight:700">Red (25 pts)</td></tr>
+              <tr><td>40% – 49.9%</td><td style="color:var(--orange);font-weight:700">Orange (18 pts)</td></tr>
+              <tr><td>28% – 39.9%</td><td style="color:var(--amber);font-weight:700">Amber (10 pts)</td></tr>
+              <tr><td>&lt; 28%</td><td style="color:var(--green);font-weight:700">Green (0 pts)</td></tr>
+            </table>
+          </div>
+
+          <div class="edu-driver-card">
+            <div class="edu-driver-header">
+              <span class="edu-driver-icon">🏦</span>
+              <div>
+                <div class="edu-driver-name">Capital Adequacy</div>
+                <div class="edu-driver-field">Equity-to-Assets Ratio</div>
+              </div>
+            </div>
+            <div class="edu-driver-formula">EQ ÷ ASSET × 100</div>
+            <p class="edu-driver-desc">A simple proxy for capital buffer. Thin capital limits the ability to absorb loan losses, restricts growth capacity, and can trigger regulatory scrutiny. Well-capitalized community banks typically maintain 10–12%. Sophisticated depositors monitor this metric.</p>
+            <table class="edu-thresh-table">
+              <tr><th>Threshold</th><th>Severity</th></tr>
+              <tr><td>&lt; 8%</td><td style="color:var(--red);font-weight:700">Red (25 pts)</td></tr>
+              <tr><td>8% – 8.99%</td><td style="color:var(--orange);font-weight:700">Orange (18 pts)</td></tr>
+              <tr><td>9% – 9.99%</td><td style="color:var(--amber);font-weight:700">Amber (10 pts)</td></tr>
+              <tr><td>≥ 10%</td><td style="color:var(--green);font-weight:700">Green (0 pts)</td></tr>
+            </table>
+          </div>
+
+        </div><!-- /edu-drivers-grid -->
+      </div>
+
+      <!-- Data source -->
+      <div class="edu-section">
+        <div class="edu-section-title">Data Source</div>
+        <p class="edu-body">All data is sourced in real time from the <strong>FDIC BankFind Suite API</strong> (<code>api.fdic.gov/banks</code>), which publishes quarterly Call Report data for all FDIC-insured institutions. No API key is required. Financial fields such as <code>NIMY</code> (Net Interest Margin %) and <code>INTEXPY</code> (Cost of Funds %) are pre-calculated by the FDIC and annualized. All dollar figures are in thousands as reported on the Call Report. Data is typically available within 60–90 days of quarter end.</p>
+      </div>
+
+    </div>
+  </div><!-- /panel-education -->
+
+  <!-- ═══════════════════════════════════════════ MODAL -->
+  <div class="driver-modal-overlay" id="driverModal" onclick="closeDriverModal(event)">
+    <div class="driver-modal">
+      <button class="modal-close" onclick="closeDriverModal(null, true)">✕</button>
+      <div class="modal-severity-bar" id="modalSeverityBar"></div>
+      <div class="modal-header">
+        <span class="modal-icon" id="modalIcon"></span>
+        <div>
+          <div class="modal-title" id="modalTitle"></div>
+          <span class="modal-badge" id="modalBadge"></span>
+        </div>
+      </div>
+      <div class="modal-metric-box" id="modalMetricBox"></div>
+      <div class="modal-narrative" id="modalNarrative"></div>
+      <div class="modal-implication" id="modalImplication"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ SCRIPT -->
+  <script>
+  // ══════════════════════════════════════════════════════════
+  //  STATE
+  // ══════════════════════════════════════════════════════════
+  let currentDriverData = {};
+  let currentBankName   = '';
+  let chartInstances    = {};
+  let scannerRows       = [];
+  let scannerSortCol    = 'score';
+  let scannerSortDir    = 'desc';
+
+  // ══════════════════════════════════════════════════════════
+  //  TAB SWITCHING
+  // ══════════════════════════════════════════════════════════
+  function switchTab(tab) {
+    document.querySelectorAll('.diq-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('panel-' + tab).classList.add('active');
+    document.getElementById('tab-' + tab).classList.add('active');
+  }
+
+  // ══════════════════════════════════════════════════════════
+  //  TOOLTIP SYSTEM
+  // ══════════════════════════════════════════════════════════
+  var _tip = null;
+  function showTip(el, html) {
+    if (!_tip) {
+      _tip = document.createElement('div');
+      _tip.id = 'diq-tooltip';
+      document.body.appendChild(_tip);
+    }
+    _tip.innerHTML = html;
+    _tip.style.opacity = '1';
+    var r = el.getBoundingClientRect();
+    var tw = _tip.offsetWidth || 180;
+    var th = _tip.offsetHeight || 40;
+    var left = Math.min(r.left + r.width / 2 - tw / 2, window.innerWidth - tw - 8);
+    var top  = r.top - th - 8 + window.scrollY;
+    if (top < 4) top = r.bottom + 8 + window.scrollY;
+    _tip.style.left = Math.max(8, left) + 'px';
+    _tip.style.top  = top + 'px';
+  }
+  function hideTip() { if (_tip) _tip.style.opacity = '0'; }
+
+  // ══════════════════════════════════════════════════════════
+  //  COMPARE BANKS
+  // ══════════════════════════════════════════════════════════
+  var compareQueue = []; // [{cert, name}]
+  var compareChartInstances = {};
+
+  function toggleCompare(cert, name) {
+    var idx = compareQueue.findIndex(function(b){ return b.cert === cert; });
+    if (idx >= 0) {
+      compareQueue.splice(idx, 1);
+    } else {
+      if (compareQueue.length >= 5) { alert('You can compare up to 5 banks at a time.'); return; }
+      compareQueue.push({ cert: cert, name: name });
+    }
+    updateCompareQueueUI();
+    // Update button state in scanner table
+    document.querySelectorAll('[data-compare-cert]').forEach(function(btn) {
+      var c = parseInt(btn.getAttribute('data-compare-cert'));
+      var inQ = compareQueue.some(function(b){ return b.cert === c; });
+      btn.textContent = inQ ? '✓ Added' : '+ Compare';
+      btn.classList.toggle('in-compare', inQ);
+    });
+  }
+
+  function updateCompareQueueUI() {
+    var bar = document.getElementById('compareQueueBar');
+    var banksEl = document.getElementById('compareQueueBanks');
+    if (!compareQueue.length) {
+      bar.style.display = 'none';
+      return;
+    }
+    bar.style.display = 'block';
+    banksEl.innerHTML = compareQueue.map(function(b) {
+      return '<div class="compare-queue-chip">' + b.name +
+        '<button onclick="toggleCompare(' + b.cert + ', \'' + b.name.replace(/'/g,"\\'") + '\')" title="Remove">✕</button></div>';
+    }).join('');
+    // Also show it on the scanner tab
+    var scannerBarEl = document.getElementById('scannerCompareBar');
+    if (scannerBarEl) scannerBarEl.style.display = compareQueue.length ? 'flex' : 'none';
+    var countEl = document.getElementById('scannerCompareCount');
+    if (countEl) countEl.textContent = compareQueue.length;
+    var slotsEl = document.getElementById('compareSlots');
+    if (slotsEl) slotsEl.textContent = compareQueue.length;
+  }
+
+  function clearCompare() {
+    compareQueue = [];
+    updateCompareQueueUI();
+    document.querySelectorAll('[data-compare-cert]').forEach(function(btn) {
+      btn.textContent = '+ Compare';
+      btn.classList.remove('in-compare');
+    });
+  }
+
+  async function runComparison() {
+    if (compareQueue.length < 2) { alert('Please add at least 2 banks to compare.'); return; }
+    document.getElementById('compareStatus').textContent = 'Fetching financial data…';
+    document.getElementById('compareOutput').style.display = 'none';
+    switchTab('compare');
+
+    const fields = 'REPDTE,ASSET,DEP,DEPDOM,LNLSNET,EQ,INTINC,EINTEXP,INTEXPY,NIMY,DEPNIDOM,DEPIDOM,COREDEP';
+    try {
+      var bankData = await Promise.all(compareQueue.map(async function(b) {
+        var finUrl  = 'https://api.fdic.gov/banks/financials?filters=CERT%3A' + b.cert +
+          '&fields=' + fields + '&limit=8&sort_by=REPDTE&sort_order=DESC';
+        var instUrl = 'https://api.fdic.gov/banks/institutions?filters=CERT%3A' + b.cert +
+          '&fields=NAME,CERT,STALP,CITY,ASSET,CLASS';
+        var [fr, ir] = await Promise.all([fetch(finUrl), fetch(instUrl)]);
+        var fj = await fr.json();
+        var ij = await ir.json();
+        var fins = (fj.data || []).map(function(d){ return d.data; });
+        var inst = (ij.data[0] || {}).data || {};
+        return { cert: b.cert, name: b.name, inst: inst, fins: fins };
+      }));
+
+      renderComparison(bankData);
+    } catch(e) {
+      document.getElementById('compareStatus').textContent = 'Error fetching data: ' + e.message;
+    }
+  }
+
+  function calcBankMetrics(bd) {
+    var f = bd.fins[0] || {};
+    var assets  = f.ASSET    || 0;
+    var dep     = f.DEP      || f.DEPDOM || 0;
+    var loans   = f.LNLSNET  || 0;
+    var eq      = f.EQ       || 0;
+    var coredep = f.COREDEP  || 0;  // FDIC pre-calculated core deposits
+    var cof     = f.INTEXPY  || 0;
+    var nim     = f.NIMY     || 0;
+    var lcd     = coredep > 0 ? (loans / coredep) : (dep > 0 ? loans / dep : 0);
+    var eqR     = assets > 0 ? ((eq / assets) * 100) : 0;
+    var ncPct   = (coredep > 0 && dep > 0) ? (Math.max(0, dep - coredep) / dep * 100) : 0;
+    var sb      = scoreBank(f);
+    var zone    = pressureZone(sb.score);
+    return { assets, dep, loans, eq, coredep, cof, nim, lcd, eqR, ncPct,
+             score: sb.score, zone, activeDriverIds: sb.activeDriverIds, latest: f };
+  }
+
+  function renderComparison(bankData) {
+    var metrics = bankData.map(function(bd){ return calcBankMetrics(bd); });
+    var names   = bankData.map(function(bd){ return bd.name; });
+    var colors  = ['#0a1628','#c9a84c','#16a34a','#dc2626','#6366f1'];
+    var latest  = metrics[0].latest;
+
+    // Destroy old compare charts
+    Object.values(compareChartInstances).forEach(function(c){ try{ c.destroy(); }catch(e){} });
+    compareChartInstances = {};
+
+    // Title
+    document.getElementById('compareTitle').textContent = 'Comparative Analysis: ' + names.join(' vs. ');
+
+    // Metrics table
+    var metricDefs = [
+      ['Pressure Score',        function(m){ return m.score; },           function(m){ return '<span class="score-badge ' + m.zone.scoreCls + '">' + m.score + '</span>'; }],
+      ['Pressure Zone',         function(m){ return m.score; },           function(m){ return m.zone.label; }],
+      ['Total Assets',          function(m){ return m.assets; },          function(m){ return fmtM(m.assets); }],
+      ['Cost of Funds',         function(m){ return m.cof; },             function(m){ return pct(m.cof); }],
+      ['Net Interest Margin',   function(m){ return m.nim; },             function(m){ return pct(m.nim); }],
+      ['Loan/Core Dep Ratio',   function(m){ return m.lcd; },             function(m){ return r2(m.lcd); }],
+      ['Non-Core Deposits',     function(m){ return m.ncPct; },           function(m){ return pct(m.ncPct); }],
+      ['Equity/Assets',         function(m){ return m.eqR; },             function(m){ return r2(m.eqR) + '%'; }],
+      ['Non-Core Deposits',     function(m){ return m.ncPct; },           function(m){ return pct(m.ncPct); }],
+      ['Active Drivers',        function(m){ return m.activeDriverIds.length; }, function(m){ return m.activeDriverIds.length + ' driver' + (m.activeDriverIds.length!==1?'s':''); }],
+    ];
+
+    var tbl = '<thead><tr><th>Metric</th>' + names.map(function(n){ return '<th>' + n + '</th>'; }).join('') + '</tr></thead><tbody>';
+    metricDefs.forEach(function(md) {
+      tbl += '<tr><td style="font-weight:600;color:var(--navy)">' + md[0] + '</td>';
+      metrics.forEach(function(m){ tbl += '<td>' + md[2](m) + '</td>'; });
+      tbl += '</tr>';
+    });
+    tbl += '</tbody>';
+    document.getElementById('compareMetricsTable').innerHTML = tbl;
+
+    // Charts
+    var chartConfigs = [
+      { id: 'cmpScoreChart', data: metrics.map(function(m){ return m.score; }),     label: 'Pressure Score',    color: colors, peerLine: null },
+      { id: 'cmpCofChart',   data: metrics.map(function(m){ return m.cof; }),       label: 'Cost of Funds %',   color: colors, peerLine: 1.60 },
+      { id: 'cmpNimChart',   data: metrics.map(function(m){ return m.nim; }),       label: 'NIM %',             color: colors, peerLine: 3.30 },
+      { id: 'cmpLcdChart',   data: metrics.map(function(m){ return m.lcd; }),       label: 'Loan/Core Dep',     color: colors, peerLine: 0.85 },
+      { id: 'cmpCdChart',    data: metrics.map(function(m){ return m.ncPct; }),     label: 'Non-Core Deposits %', color: colors, peerLine: 15 },
+      { id: 'cmpEqChart',    data: metrics.map(function(m){ return m.eqR; }),       label: 'Equity/Assets %',   color: colors, peerLine: 10 },
+    ];
+
+    chartConfigs.forEach(function(cfg) {
+      var ctx = document.getElementById(cfg.id);
+      if (!ctx) return;
+      var barColors = names.map(function(_, i){ return colors[i] || colors[0]; });
+      var datasets = [{
+        label: cfg.label,
+        data: cfg.data,
+        backgroundColor: barColors.map(function(c){ return c + 'cc'; }),
+        borderColor: barColors,
+        borderWidth: 2,
+        borderRadius: 6,
+      }];
+      var annotations = {};
+      if (cfg.peerLine !== null) {
+        annotations.peer = {
+          type: 'line', yMin: cfg.peerLine, yMax: cfg.peerLine,
+          borderColor: '#dc2626', borderWidth: 1.5, borderDash: [5,4],
+          label: { content: 'Peer ' + cfg.peerLine, display: true, position: 'end', font: { size: 10 }, color: '#dc2626', backgroundColor: 'transparent' }
+        };
+      }
+      compareChartInstances[cfg.id] = new Chart(ctx, {
+        type: 'bar',
+        data: { labels: names.map(function(n){ return n.length > 18 ? n.substring(0,16)+'…' : n; }), datasets: datasets },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+            y: { grid: { color: '#e2e8f0' }, ticks: { font: { size: 10 } } }
+          }
+        }
+      });
+    });
+
+    // Executive summary — detailed
+    var highest  = metrics.reduce(function(a,b,i){ return b.score > metrics[a].score ? i : a; }, 0);
+    var lowest   = metrics.reduce(function(a,b,i){ return b.score < metrics[a].score ? i : a; }, 0);
+    var avgScore = Math.round(metrics.reduce(function(s,m){ return s + m.score; }, 0) / metrics.length);
+    var avgCof   = (metrics.reduce(function(s,m){ return s + m.cof; }, 0) / metrics.length).toFixed(2);
+    var avgNim   = (metrics.reduce(function(s,m){ return s + m.nim; }, 0) / metrics.length).toFixed(2);
+    var avgLcd   = (metrics.reduce(function(s,m){ return s + m.lcd; }, 0) / metrics.length).toFixed(2);
+    var avgNc    = (metrics.reduce(function(s,m){ return s + m.ncPct; }, 0) / metrics.length).toFixed(1);
+    var avgEq    = (metrics.reduce(function(s,m){ return s + m.eqR; }, 0) / metrics.length).toFixed(1);
+    var minEq    = r2(Math.min.apply(null, metrics.map(function(m){return m.eqR;})));
+    var maxEq    = r2(Math.max.apply(null, metrics.map(function(m){return m.eqR;})));
+    var highCofNames = names.filter(function(_,i){ return metrics[i].cof >= 2.0; });
+    var lowNimNames  = names.filter(function(_,i){ return metrics[i].nim < 3.0; });
+    var highLcdNames = names.filter(function(_,i){ return metrics[i].lcd >= 1.0; });
+    var highNcNames2 = names.filter(function(_,i){ return metrics[i].ncPct >= 20; });
+    var highNcNames  = names.filter(function(_,i){ return metrics[i].ncPct >= 15; });
+    var lowCapNames  = names.filter(function(_,i){ return metrics[i].eqR < 9; });
+
+    // Sort by score for ranking sentence
+    var ranked = names.map(function(n,i){ return { name:n, score:metrics[i].score, zone:metrics[i].zone.label }; })
+      .sort(function(a,b){ return b.score - a.score; });
+
+    var execHtml = '';
+
+    // Overview
+    execHtml += '<p>This comparative analysis evaluates <strong>' + names.length + ' FDIC-insured institutions</strong> — ' + names.join(', ') + ' — across the six Bank Call Report Analyzer funding pressure dimensions. All data is drawn from the most recent available FDIC Call Report quarter and reflects each institution\'s current balance sheet structure and income statement ratios.</p>';
+
+    // Pressure score ranking
+    execHtml += '<p><strong>Pressure Score Ranking:</strong> ' +
+      ranked.map(function(r,i){ return (i+1) + '. ' + r.name + ' (' + r.score + '/100, ' + r.zone + ')'; }).join(' &nbsp;·&nbsp; ') +
+      '. The group average score is <strong>' + avgScore + '/100</strong>. ';
+    if (metrics[highest].score >= 45) {
+      execHtml += '<strong>' + names[highest] + '</strong> represents the most acute funding concern in this peer set, with ' + metrics[highest].activeDriverIds.length + ' active pressure driver' + (metrics[highest].activeDriverIds.length !== 1 ? 's' : '') + ' and a score well into the ' + metrics[highest].zone.label + ' zone. ';
+    }
+    if (metrics[lowest].score < 20) {
+      execHtml += '<strong>' + names[lowest] + '</strong> demonstrates a notably healthy funding profile relative to peers, with a score of ' + metrics[lowest].score + '/100 and minimal stress indicators. ';
+    }
+    execHtml += '</p>';
+
+    // Cost of funds
+    execHtml += '<p><strong>Cost of Funds:</strong> The group average cost of funds is <strong>' + avgCof + '%</strong> compared to a community bank peer median of 1.60%. ';
+    if (highCofNames.length) {
+      execHtml += highCofNames.join(' and ') + (highCofNames.length > 1 ? ' are' : ' is') + ' operating above the 2.0% elevated threshold, indicating meaningful reliance on higher-cost deposits or aggressive rate competition to retain funding. Each 10 basis point increase in cost of funds translates directly to reduced net interest income and compressed margins. ';
+    } else {
+      execHtml += 'All institutions in this group are operating below the 2.0% elevated threshold, reflecting relatively efficient funding structures. ';
+    }
+    execHtml += '</p>';
+
+    // NIM
+    execHtml += '<p><strong>Net Interest Margin:</strong> Group average NIM is <strong>' + avgNim + '%</strong> versus a community bank peer median of 3.30%. ';
+    if (lowNimNames.length) {
+      execHtml += lowNimNames.join(' and ') + (lowNimNames.length > 1 ? ' are' : ' is') + ' operating below 3.0% — a level that meaningfully constrains the ability to absorb credit costs, provision adequately for loan losses, and fund operating expenses through spread income alone. NIM compression at these levels often accelerates if funding costs continue to rise without offsetting loan yield expansion. ';
+    } else {
+      execHtml += 'All institutions are maintaining NIM above 3.0%, preserving reasonable income coverage against operating and credit costs. ';
+    }
+    execHtml += '</p>';
+
+    // Liquidity / loan-to-deposit
+    execHtml += '<p><strong>Liquidity and Loan Funding:</strong> Average loan-to-core-deposit ratio across the group is <strong>' + avgLcd + '</strong> (peer median: 0.85). ';
+    if (highLcdNames.length) {
+      execHtml += highLcdNames.join(' and ') + (highLcdNames.length > 1 ? ' carry' : ' carries') + ' ratios above 1.0, meaning loan books exceed the FDIC-calculated core deposit base — relying on large CDs, brokered deposits, or wholesale funding. This creates a compounding vulnerability: rising rates simultaneously increase funding costs and reduce the ability to profitably fund new loan growth. ';
+    } else {
+      execHtml += 'All institutions maintain loan-to-core-deposit ratios at or below peer, indicating that FDIC-calculated core deposits are sufficient to fund current loan balances — a sign of structural funding stability. ';
+    }
+    execHtml += '</p>';
+
+    // Deposit mix / non-core
+    execHtml += '<p><strong>Deposit Mix and Non-Core Funding:</strong> Average non-core deposit ratio across the group is <strong>' + avgNc + '%</strong> of total deposits (peer benchmark: &lt;15%). Non-core deposits — large-denomination CDs, brokered funds, and other rate-sensitive instruments — represent the most volatile layer of a bank\'s funding base. ';
+    if (highNcNames2.length) {
+      execHtml += highNcNames2.join(' and ') + (highNcNames2.length > 1 ? ' carry' : ' carries') + ' non-core ratios above 20%, creating meaningful repricing exposure. These institutions cannot rely on this funding being present at current costs 12–18 months from now without paying a rate premium. ';
+    } else {
+      execHtml += 'Non-core deposit levels are manageable across the group, with FDIC-calculated core deposits forming the majority of each institution\'s funding base. ';
+    }
+    execHtml += '</p>';
+
+    // Capital
+    execHtml += '<p><strong>Capital Adequacy:</strong> Equity-to-assets ratios across the group range from <strong>' + minEq + '%</strong> to <strong>' + maxEq + '%</strong>, with a group average of <strong>' + avgEq + '%</strong> (well-capitalized benchmark: 10%+). ';
+    if (lowCapNames.length) {
+      execHtml += lowCapNames.join(' and ') + (lowCapNames.length > 1 ? ' are' : ' is') + ' operating with equity-to-assets below 9%, which combined with elevated funding costs creates a compounding risk: thinner capital limits the ability to absorb unexpected loan losses while reduced earnings from margin compression slow capital accumulation through retained earnings. ';
+    } else {
+      execHtml += 'Capital levels are adequate across the group, with all institutions maintaining sufficient equity buffer to absorb moderate credit stress without threatening regulatory minimums. ';
+    }
+    execHtml += '</p>';
+
+    // Strategic takeaway
+    execHtml += '<p><strong>Strategic Takeaway:</strong> ';
+    if (avgScore >= 45) {
+      execHtml += 'The collective funding profile of this peer group reflects meaningful structural pressure. The combination of elevated funding costs, NIM compression, and deposit mix imbalances creates a compounding dynamic that warrants active management attention at the ALCO level. Institutions in this group should prioritize core deposit acquisition, proactive CD repricing strategy, and margin protection through loan pricing discipline. ';
+    } else if (avgScore >= 20) {
+      execHtml += 'While no institution in this group is in acute distress, the collective profile reflects moderate structural pressure that, if unaddressed, can compound quickly in a competitive rate environment. The highest-priority actions involve strengthening core deposit relationships and managing CD maturity ladders to avoid repricing cliffs. ';
+    } else {
+      execHtml += 'This peer group demonstrates generally healthy funding fundamentals. The strategic priority should be maintaining the core deposit strengths that underpin current scores while positioning proactively for any rate environment shifts that could alter the deposit competitive landscape. ';
+    }
+    execHtml += 'Consultants and advisors engaging with any institution in this group should use this comparative context to anchor deposit strategy conversations in peer-relative benchmarks rather than absolute metrics alone.</p>';
+
+    document.getElementById('compareExecSummary').innerHTML = execHtml;
+
+    // Individual narratives
+    var narr = '';
+    bankData.forEach(function(bd, i) {
+      var m = metrics[i];
+      var zoneColors = { low: 'var(--green)', mod: 'var(--amber)', high: 'var(--orange)', crit: 'var(--red)' };
+      var zoneBgs    = { low: 'var(--green-light)', mod: 'var(--amber-light)', high: 'var(--orange-light)', crit: 'var(--red-light)' };
+      var activeNames = m.activeDriverIds.map(function(id){ return ({ lcd:'Liquidity Stress', cof:'Cost of Funds', ncd:'Non-Core Dependency', nim:'NIM Compression', cdconc:'CD Concentration', capital:'Capital Adequacy' })[id] || id; });
+      narr += '<div class="cmp-bank-narrative">';
+      narr += '<h3>' + bd.name + ' <span style="font-size:12px;color:var(--text-light);font-weight:400">' + (bd.inst.CITY||'') + ', ' + (bd.inst.STALP||'') + ' · ' + fmtM(m.assets) + ' assets</span></h3>';
+      narr += '<span class="cmp-zone-badge" style="background:' + zoneBgs[m.zone.key] + ';color:' + zoneColors[m.zone.key] + '">' + m.zone.label + ' · ' + m.score + '/100</span>';
+      narr += '<p><strong>' + bd.name + '</strong> carries a funding pressure score of <strong>' + m.score + '/100</strong> (' + m.zone.label + '). ';
+      if (m.activeDriverIds.length) {
+        narr += 'Active pressure drivers include: <strong>' + activeNames.join(', ') + '</strong>. ';
+      } else {
+        narr += 'No significant pressure drivers are active — all key metrics are within healthy ranges. ';
+      }
+      narr += '</p>';
+      narr += '<p>Cost of funds: <strong>' + pct(m.cof) + '</strong> | NIM: <strong>' + pct(m.nim) + '</strong> | Loan/Core Dep: <strong>' + r2(m.lcd) + '</strong> | Non-Core Dep: <strong>' + pct(m.ncPct) + '</strong> | Equity/Assets: <strong>' + r2(m.eqR) + '%</strong>.</p>';
+      if (m.cof >= 2.0) narr += '<p>Cost of funds at ' + pct(m.cof) + ' is above peer median (1.60%), indicating above-average reliance on higher-cost deposits. This compresses NIM and limits profitability headroom.</p>';
+      if (m.nim < 3.0)  narr += '<p>NIM of ' + pct(m.nim) + ' is below the community bank peer median of 3.30%, reducing the institution\'s ability to absorb credit costs and operating expenses through interest income alone.</p>';
+      if (m.lcd >= 1.0) narr += '<p>Loan-to-core-deposit ratio of ' + r2(m.lcd) + ' exceeds 1.0, meaning loans exceed the FDIC-calculated core deposit base — the bank is partially funding its loan book with large CDs, brokered deposits, or wholesale sources.</p>';
+      if (m.ncPct >= 20) narr += '<p>Non-core deposit ratio of ' + pct(m.ncPct) + ' is elevated — FDIC-calculated non-core funds (large CDs, brokered deposits) exceed 20% of total deposits, creating meaningful repricing and retention risk.</p>';
+      narr += '</div>';
+    });
+    document.getElementById('compareNarratives').innerHTML = narr;
+
+    document.getElementById('compareStatus').textContent = '';
+    document.getElementById('compareOutput').style.setProperty('display','block','important');
+  }
+
+  function prepareCompareChartsForPrint() {
+    Object.keys(compareChartInstances).forEach(function(id) {
+      var chart  = compareChartInstances[id];
+      var canvas = document.getElementById(id);
+      var img    = document.getElementById(id + '-print');
+      if (canvas && img && chart) {
+        try {
+          chart.update('none'); // force immediate redraw without animation
+          img.src = canvas.toDataURL('image/png', 1.0);
+        } catch(e) {}
+      }
+    });
+  }
+
+  function restoreCompareChartsAfterPrint() {
+    Object.keys(compareChartInstances).forEach(function(id) {
+      var img = document.getElementById(id + '-print');
+      if (img) img.src = '';
+    });
+  }
+
+  function exportComparePDF() {
+    document.body.classList.add('printing-compare');
+    // Step 1: force each Chart.js instance to resize so canvas dimensions are correct
+    Object.values(compareChartInstances).forEach(function(chart) {
+      try { chart.resize(); } catch(e) {}
+    });
+    // Step 2: after resize settles, capture canvases to <img> elements
+    setTimeout(function() {
+      prepareCompareChartsForPrint();
+      document.getElementById('comparePrintHeader').style.display = 'flex';
+      var oldTitle = document.title;
+      document.title = '';
+      // Step 3: give images time to load before printing
+      setTimeout(function() {
+        window.print();
+        setTimeout(function() {
+          restoreCompareChartsAfterPrint();
+          document.getElementById('comparePrintHeader').style.display = 'none';
+          document.body.classList.remove('printing-compare');
+          document.title = oldTitle;
+        }, 1000);
+      }, 600);
+    }, 400);
+  }
+
+  // ══════════════════════════════════════════════════════════
+  //  COMPARE TAB — BANK SEARCH
+  // ══════════════════════════════════════════════════════════
+  var cmpAcTimer = null;
+  var cmpAcResults = [];
+
+  function cmpSearchInput(val) {
+    clearTimeout(cmpAcTimer);
+    var drop = document.getElementById('cmpAcDropdown');
+    if (!val || val.trim().length < 2) { drop.style.display = 'none'; drop.innerHTML = ''; return; }
+    cmpAcTimer = setTimeout(function() { cmpFetchAc(val.trim()); }, 280);
+  }
+
+  async function cmpFetchAc(q) {
+    try {
+      var url = 'https://api.fdic.gov/banks/institutions?filters=' +
+        encodeURIComponent('ACTIVE:1 AND NAME:*' + q + '*') +
+        '&fields=NAME,CERT,STALP,CITY,ASSET&limit=10&sort_by=ASSET&sort_order=DESC';
+      var res  = await fetch(url);
+      var json = await res.json();
+      cmpAcResults = (json.data || []).map(function(d){ return d.data; });
+      var drop = document.getElementById('cmpAcDropdown');
+      if (!cmpAcResults.length) { drop.style.display = 'none'; return; }
+      drop.innerHTML = cmpAcResults.map(function(b, i) {
+        var inQ = compareQueue.some(function(x){ return x.cert === b.CERT; });
+        var hl  = (b.NAME||'').replace(new RegExp('(' + q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + ')', 'gi'), '<strong>$1</strong>');
+        return '<div class="ac-item" onmousedown="cmpAddBank(' + i + ')" style="' + (inQ ? 'opacity:0.5;pointer-events:none' : '') + '">' +
+          hl + '<small>' + (b.CITY||'') + ', ' + (b.STALP||'') + ' · ' + fmtM(b.ASSET) + (inQ ? ' · Already added' : '') + '</small></div>';
+      }).join('');
+      drop.style.display = 'block';
+    } catch(e) {}
+  }
+
+  function cmpAddBank(idx) {
+    var bank = cmpAcResults[idx];
+    if (!bank) return;
+    if (compareQueue.length >= 5) { alert('You can compare up to 5 banks.'); return; }
+    if (compareQueue.some(function(b){ return b.cert === bank.CERT; })) return;
+    compareQueue.push({ cert: bank.CERT, name: bank.NAME });
+    document.getElementById('compareSearchInput').value = '';
+    var drop = document.getElementById('cmpAcDropdown');
+    drop.style.display = 'none'; drop.innerHTML = '';
+    updateCompareQueueUI();
+  }
+
+  // Close compare dropdown when clicking outside
+  document.addEventListener('click', function(e) {
+    var inp = document.getElementById('compareSearchInput');
+    var drop = document.getElementById('cmpAcDropdown');
+    if (inp && drop && !inp.contains(e.target) && !drop.contains(e.target)) drop.style.display = 'none';
+  });
+
+  // ══════════════════════════════════════════════════════════
+  //  API FIELD TESTER
+  // ══════════════════════════════════════════════════════════
+  var apiAcTimer = null;
+  var apiAcResults = [];
+
+  function apiOnSearchInput(val) {
+    clearTimeout(apiAcTimer);
+    var dropdown = document.getElementById('apiAcDropdown');
+    if (!val || val.trim().length < 2) { dropdown.style.display = 'none'; dropdown.innerHTML = ''; return; }
+    apiAcTimer = setTimeout(function() { apiFetchAc(val.trim()); }, 280);
+  }
+
+  async function apiFetchAc(q) {
+    try {
+      var url = 'https://api.fdic.gov/banks/institutions?filters=' +
+        encodeURIComponent('ACTIVE:1 AND NAME:*' + q + '*') +
+        '&fields=NAME,CERT,STALP,CITY,ASSET&limit=10&sort_by=ASSET&sort_order=DESC';
+      var res  = await fetch(url);
+      var json = await res.json();
+      apiAcResults = (json.data || []).map(function(d){ return d.data; });
+
+      var dropdown = document.getElementById('apiAcDropdown');
+      if (!apiAcResults.length) { dropdown.style.display = 'none'; return; }
+      dropdown.innerHTML = apiAcResults.map(function(b, i) {
+        var name = b.NAME || '';
+        var hl = name.replace(new RegExp('(' + q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + ')', 'gi'), '<strong>$1</strong>');
+        return '<div class="ac-item" onmousedown="apiTestBank(' + i + ')">' +
+          hl + '<small>' + (b.CITY||'') + ', ' + (b.STALP||'') + ' · ' + fmtM(b.ASSET) + '</small></div>';
+      }).join('');
+      dropdown.style.display = 'block';
+    } catch(e) {}
+  }
+
+  async function apiTestBank(idx) {
+    var bank = apiAcResults[idx];
+    if (!bank) return;
+    document.getElementById('apiSearchInput').value = bank.NAME;
+    var dropdown = document.getElementById('apiAcDropdown');
+    dropdown.style.display = 'none';
+    dropdown.innerHTML = '';
+
+    document.getElementById('apiStatus').textContent = 'Fetching FDIC data for ' + bank.NAME + '…';
+    document.getElementById('apiResults').innerHTML = '';
+
+    const fields = 'REPDTE,ASSET,DEP,DEPDOM,LNLSNET,EQ,INTINC,EINTEXP,INTEXPY,NIMY,DEPNIDOM,DEPIDOM,COREDEP';
+    const finUrl  = 'https://api.fdic.gov/banks/financials?filters=CERT%3A' + bank.CERT +
+      '&fields=' + fields + '&limit=8&sort_by=REPDTE&sort_order=DESC';
+    const instUrl = 'https://api.fdic.gov/banks/institutions?filters=CERT%3A' + bank.CERT +
+      '&fields=NAME,CERT,STALP,CITY,ASSET,CLASS';
+
+    try {
+      const [finRes, instRes] = await Promise.all([fetch(finUrl), fetch(instUrl)]);
+      const finJson  = await finRes.json();
+      const instJson = await instRes.json();
+      const inst = (instJson.data[0] || {}).data || {};
+      const fins = (finJson.data || []).map(function(d){ return d.data; });
+
+      if (!fins.length) {
+        document.getElementById('apiStatus').textContent = 'No financial data found.';
+        return;
+      }
+
+      document.getElementById('apiStatus').textContent =
+        fins.length + ' quarters returned · Green = has value · Red = zero/null';
+
+      const latest  = fins[0];
+      const assets  = latest.ASSET    || 0;
+      const dep     = latest.DEPDOM   || 0;
+      const loans   = latest.LNLSNET  || 0;
+      const eq      = latest.EQ       || 0;
+      const intInc  = latest.INTINC   || 0;
+      const intExp  = latest.EINTEXP  || 0;
+      const depNI   = latest.DEPNIDOM || 0;
+      const depIB   = latest.DEPIDOM  || 0;
+      const coredep = latest.COREDEP  || 0;
+
+      function valCell(v) {
+        if (v === null || v === undefined) return '<span class="api-val-zero">NULL</span>';
+        if (v === 0)  return '<span class="api-val-zero">0</span>';
+        return '<span class="api-val-ok">' + v + '</span>';
+      }
+
+      const fieldDefs = [
+        ['REPDTE',   'Report date',                                         latest.REPDTE],
+        ['ASSET',    'Total assets',                                        latest.ASSET],
+        ['DEP',      'Total deposits',                                      latest.DEP],
+        ['DEPDOM',   'Domestic deposits',                                   latest.DEPDOM],
+        ['LNLSNET',  'Net loans & leases',                                  latest.LNLSNET],
+        ['EQ',       'Total equity capital',                                latest.EQ],
+        ['INTINC',   'Total interest income $ → used in narratives',        latest.INTINC],
+        ['EINTEXP',  'Total interest expense $ → used in narratives',       latest.EINTEXP],
+        ['INTEXPY',  'Interest expense rate % (pre-calc) → COF metric',     latest.INTEXPY],
+        ['NIMY',     'Net interest margin % (pre-calc) → NIM metric',       latest.NIMY],
+        ['DEPNIDOM', 'Non-interest bearing deposits (domestic)',             latest.DEPNIDOM],
+        ['DEPIDOM',  'Interest-bearing domestic deposits (= DEPDOM−DEPNIDOM)', latest.DEPIDOM],
+        ['COREDEP',  'Core deposits (FDIC pre-calc: excl. large CDs & brokered)', latest.COREDEP],
+      ];
+
+      const dep2 = latest.DEP || latest.DEPDOM || 0;
+      const derivedDefs = [
+        ['Cost of Funds',         'INTEXPY (pre-calc %)',              latest.INTEXPY != null ? latest.INTEXPY.toFixed(2) + '%' : 'N/A'],
+        ['Net Interest Margin',   'NIMY (pre-calc %)',                 latest.NIMY    != null ? latest.NIMY.toFixed(2)    + '%' : 'N/A'],
+        ['Loan/Core Dep Ratio',   'LNLSNET / COREDEP',                coredep > 0 ? (loans/coredep).toFixed(4) : 'N/A'],
+        ['Equity/Assets',         'EQ / ASSET × 100',                 assets > 0 ? ((eq/assets)*100).toFixed(2) + '%' : 'N/A'],
+        ['Non-Core Deposits',     'DEP − COREDEP',                    coredep > 0 ? fmtM(Math.max(0, dep2 - coredep)) : 'N/A'],
+        ['Non-Core %',            '(DEP − COREDEP) / DEP × 100',      coredep > 0 && dep2 > 0 ? (Math.max(0, dep2 - coredep)/dep2*100).toFixed(2) + '%' : 'N/A'],
+        ['Core Deposits (FDIC)',  'COREDEP',                           fmtM(coredep)],
+      ];
+
+      var html = '';
+
+      // Raw fields table
+      html += '<div class="api-section"><h3>Raw FDIC Fields — Most Recent Quarter (' + (latest.REPDTE||'?') + ')</h3>';
+      html += '<table class="api-table"><tr><th>Field</th><th>Value</th><th>Description</th></tr>';
+      fieldDefs.forEach(function(f) {
+        html += '<tr><td class="field-name">' + f[0] + '</td><td>' + valCell(f[2]) + '</td><td class="field-note">' + f[1] + '</td></tr>';
+      });
+      html += '</table></div>';
+
+      // Derived metrics table
+      html += '<div class="api-section"><h3>Derived Metrics (Bank Call Report Analyzer Calculations)</h3>';
+      html += '<table class="api-table"><tr><th>Metric</th><th>Formula</th><th>Result</th></tr>';
+      derivedDefs.forEach(function(d) {
+        var v = d[2];
+        var cls = (v === 'N/A' || v === '$0' || v === '0.00%') ? 'api-val-zero' : 'api-val-derived';
+        html += '<tr><td><strong>' + d[0] + '</strong></td>' +
+          '<td class="field-note" style="font-family:monospace">' + d[1] + '</td>' +
+          '<td><span class="' + cls + '">' + v + '</span></td></tr>';
+      });
+      html += '</table></div>';
+
+      // 8-quarter trend
+      html += '<div class="api-section"><h3>8-Quarter Trend</h3>';
+      html += '<table class="api-table"><tr><th>Quarter</th><th>Assets</th><th>INTINC $</th><th>EINTEXP $</th><th>COF % (INTEXPY)</th><th>NIM % (NIMY)</th><th>Deposits</th><th>Core Dep</th></tr>';
+      fins.forEach(function(f) {
+        function qval(v) {
+          if (v === null || v === undefined || v === 0) return '<span class="api-val-zero">' + (v||0) + '</span>';
+          return '<span class="api-val-ok">' + v + '</span>';
+        }
+        html += '<tr>' +
+          '<td><strong>' + (f.REPDTE||'?') + '</strong></td>' +
+          '<td>' + qval(f.ASSET)   + '</td>' +
+          '<td>' + qval(f.INTINC)  + '</td>' +
+          '<td>' + qval(f.EINTEXP) + '</td>' +
+          '<td>' + qval(f.INTEXPY != null ? f.INTEXPY.toFixed(2)+'%' : 0) + '</td>' +
+          '<td>' + qval(f.NIMY    != null ? f.NIMY.toFixed(2)+'%'    : 0) + '</td>' +
+          '<td>' + qval(f.DEP || f.DEPDOM) + '</td>' +
+          '<td>' + qval(f.COREDEP)        + '</td>' +
+          '</tr>';
+      });
+      html += '</table></div>';
+
+      // Raw JSON
+      html += '<div class="api-section"><h3>Raw API Response (Latest Quarter)</h3>';
+      html += '<div class="api-raw-pre">' + JSON.stringify(latest, null, 2) + '</div></div>';
+
+      document.getElementById('apiResults').innerHTML = html;
+
+    } catch(e) {
+      document.getElementById('apiStatus').textContent = 'Error: ' + e.message;
+    }
+  }
+
+  // Close API dropdown when clicking outside
+  document.addEventListener('click', function(e) {
+    var wrap = document.getElementById('apiSearchInput');
+    var drop = document.getElementById('apiAcDropdown');
+    if (wrap && drop && !wrap.contains(e.target) && !drop.contains(e.target)) {
+      drop.style.display = 'none';
+    }
+  });
+
+  // ══════════════════════════════════════════════════════════
+  //  BANK AUTOCOMPLETE SEARCH
+  // ══════════════════════════════════════════════════════════
+  var acTimer = null;
+  var acResults = [];
+  var acIndex = -1;
+
+  function onSearchInput(val) {
+    clearTimeout(acTimer);
+    if (!val || val.trim().length < 2) { closeAcDropdown(); return; }
+    acTimer = setTimeout(function() { fetchAcResults(val.trim()); }, 280);
+  }
+
+  async function fetchAcResults(q) {
+    try {
+      // Wildcard NAME filter is most reliable for autocomplete partial matching
+      var encoded = encodeURIComponent('ACTIVE:1 AND NAME:*' + q + '*');
+      var url = 'https://api.fdic.gov/banks/institutions?filters=' + encoded +
+        '&fields=NAME,CERT,STALP,CITY,ASSET&limit=10&sort_by=ASSET&sort_order=DESC';
+      var res  = await fetch(url);
+      var json = await res.json();
+      acResults = (json.data || []).map(function(d){ return d.data; });
+      renderAcDropdown(q);
+    } catch(e) { closeAcDropdown(); }
+  }
+
+  function renderAcDropdown(q) {
+    var dropdown = document.getElementById('acDropdown');
+    if (!acResults.length) { closeAcDropdown(); return; }
+
+    var ql = q.toLowerCase();
+    dropdown.innerHTML = acResults.map(function(b, i) {
+      var name = b.NAME || '';
+      var highlighted = name.replace(new RegExp('(' + q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + ')', 'gi'),
+        '<strong>$1</strong>');
+      return '<div class="ac-item" data-idx="' + i + '" onmousedown="selectBankFromAc(' + i + ')">' +
+        highlighted +
+        '<small>' + (b.CITY || '') + ', ' + (b.STALP || '') + ' · ' + fmtM(b.ASSET) + '</small>' +
+        '</div>';
+    }).join('');
+
+    dropdown.style.display = 'block';
+    acIndex = -1;
+  }
+
+  function selectBankFromAc(idx) {
+    var bank = acResults[idx];
+    if (!bank) return;
+    document.getElementById('searchInput').value = bank.NAME;
+    closeAcDropdown();
+    loadBank(bank.CERT, bank.NAME);
+  }
+
+  function closeAcDropdown() {
+    var dropdown = document.getElementById('acDropdown');
+    if (dropdown) { dropdown.style.display = 'none'; dropdown.innerHTML = ''; }
+    acResults = [];
+    acIndex = -1;
+  }
+
+  function handleSearchKey(event) {
+    var dropdown = document.getElementById('acDropdown');
+    var items = dropdown ? dropdown.querySelectorAll('.ac-item') : [];
+    if (event.key === 'ArrowDown') {
+      acIndex = Math.min(acIndex + 1, items.length - 1);
+      items.forEach(function(el, i) { el.style.background = i === acIndex ? '#f3f4f6' : ''; });
+      event.preventDefault();
+    } else if (event.key === 'ArrowUp') {
+      acIndex = Math.max(acIndex - 1, -1);
+      items.forEach(function(el, i) { el.style.background = i === acIndex ? '#f3f4f6' : ''; });
+      event.preventDefault();
+    } else if (event.key === 'Enter') {
+      if (acIndex >= 0 && acResults[acIndex]) {
+        selectBankFromAc(acIndex);
+      }
+    } else if (event.key === 'Escape') {
+      closeAcDropdown();
+    }
+  }
+
+  // Close dropdown when clicking outside
+  document.addEventListener('click', function(e) {
+    var wrap = document.querySelector('.bank-search-wrap');
+    if (wrap && !wrap.contains(e.target)) closeAcDropdown();
+  });
+
+  // ══════════════════════════════════════════════════════════
+  //  LOAD BANK DATA
+  // ══════════════════════════════════════════════════════════
+  async function loadBank(cert, name) {
+    document.getElementById('loadingIndicator').style.display = 'block';
+    document.getElementById('reportOutput').style.display    = 'none';
+    destroyCharts();
+
+    try {
+      // INTINC = interest income $, EINTEXP = interest expense $
+      // INTEXPY = expense rate % (pre-calc), NIMY = NIM % (pre-calc)
+      const fields = 'REPDTE,ASSET,DEP,DEPDOM,LNLSNET,EQ,INTINC,EINTEXP,INTEXPY,NIMY,DEPNIDOM,DEPIDOM,COREDEP';
+      const url = `https://api.fdic.gov/banks/financials?filters=CERT%3A${cert}&fields=${fields}&limit=8&sort_by=REPDTE&sort_order=DESC`;
+      const [instRes, finRes] = await Promise.all([
+        fetch(`https://api.fdic.gov/banks/institutions?filters=CERT%3A${cert}&fields=NAME,CERT,STALP,CITY,ASSET,CLASS`),
+        fetch(url)
+      ]);
+      const instJson = await instRes.json();
+      const finJson  = await finRes.json();
+      const inst = instJson.data[0]?.data || {};
+      const fins = (finJson.data || []).map(d => d.data);
+
+      document.getElementById('loadingIndicator').style.display = 'none';
+      if (!fins.length) { alert('No financial data found for this institution.'); return; }
+      renderReport(cert, name, inst, fins);
+    } catch(e) {
+      document.getElementById('loadingIndicator').style.display = 'none';
+      alert('Error fetching FDIC data: ' + e.message);
+    }
+  }
+
+  // ══════════════════════════════════════════════════════════
+  //  HELPERS
+  // ══════════════════════════════════════════════════════════
+  function fmt(n) {
+    if (!n) return '0';
+    if (n >= 1000000) return (n/1000000).toFixed(1) + 'B';
+    if (n >= 1000)    return (n/1000).toFixed(0) + 'M';
+    return n.toLocaleString();
+  }
+  function fmtM(thousands) { return '$' + fmt(thousands); }
+  function pct(n) { return (n || 0).toFixed(2) + '%'; }
+  function r2(n) { return (n || 0).toFixed(2); }
+
+  function pressureZone(score) {
+    if (score >= 70) return { label: 'Intense Pressure', cls: 'zone-crit', scoreCls: 'score-crit', color: '#dc2626', key: 'crit' };
+    if (score >= 45) return { label: 'High Pressure',    cls: 'zone-high', scoreCls: 'score-high', color: '#c2410c', key: 'high' };
+    if (score >= 20) return { label: 'Moderate Pressure',cls: 'zone-mod',  scoreCls: 'score-mod',  color: '#d97706', key: 'mod'  };
+    return             { label: 'Low Pressure',          cls: 'zone-low',  scoreCls: 'score-low',  color: '#16a34a', key: 'low'  };
+  }
+
+  function severityColor(sev) {
+    return { red: '#dc2626', orange: '#c2410c', amber: '#d97706', green: '#16a34a' }[sev] || '#8896a8';
+  }
+
+  function buildMetricBoxHTML(metricBox) {
+    if (!metricBox || !metricBox.rows) return '';
+    const rows = metricBox.rows.map(r =>
+      `<tr>
+        <td>${r.label}</td>
+        <td class="${r.highlight ? 'highlight' : r.alert ? 'alert' : ''}">${r.value}</td>
+      </tr>`
+    ).join('');
+    return `<table class="pdf-metric-table">${rows}</table>`;
+  }
+
+  // ══════════════════════════════════════════════════════════
+  //  RECOMMENDATIONS
+  // ══════════════════════════════════════════════════════════
+  function generateRecs(zone, bankName, metrics) {
+    const recs = {
+      crit: [
+        { title: 'Immediate Funding Diversification',
+          body: `${bankName} should urgently explore wholesale funding alternatives and brokered deposit relationships to reduce concentration risk. The current funding profile carries meaningful near-term liquidity risk.` },
+        { title: 'Core Deposit Acquisition Strategy',
+          body: `Launch a targeted relationship deposit campaign focused on non-interest bearing and low-cost transaction accounts. Rate-sensitive deposits will not solve the underlying core deposit deficit.` },
+        { title: 'Board-Level Liquidity Review',
+          body: `Given the intensity of funding pressure signals, a formal board-level liquidity stress test and contingency funding plan review is warranted immediately. ALCO should convene with expanded scope.` },
+      ],
+      high: [
+        { title: 'Deposit Mix Rebalancing',
+          body: `${bankName} should prioritize growing non-interest bearing and savings deposits relative to time deposits. A shift in mix of even 5–8 percentage points would meaningfully reduce funding cost sensitivity.` },
+        { title: 'Repricing Risk Management',
+          body: `Review the CD maturity schedule and develop a proactive retention strategy for upcoming maturities. Avoid the "rate auction" cycle by building relationships before renewal windows open.` },
+        { title: 'Margin Protection Tactics',
+          body: `With NIM under compression, evaluate loan pricing discipline and fee income expansion to protect revenue per asset. Modest rate increases on new loan originations can partially offset funding cost headwinds.` },
+      ],
+      mod: [
+        { title: 'Proactive Monitoring',
+          body: `Funding metrics for ${bankName} are trending toward stress. Establish quarterly benchmarking against FDIC peer data to catch deterioration early before it becomes difficult to reverse.` },
+        { title: 'Relationship Deepening',
+          body: `The most durable response to moderate funding pressure is deepening existing customer relationships — cross-selling treasury management, adding direct deposit accounts, and capturing primary banking relationships.` },
+        { title: 'Scenario Planning',
+          body: `Model the impact of a 150bps rate increase on funding costs and NIM. Understanding the sensitivity ahead of time positions management to respond with confidence rather than reactively.` },
+      ],
+      low: [
+        { title: 'Sustain Core Deposit Strength',
+          body: `${bankName}'s funding profile is healthy. The priority now is protecting it — continue investing in relationship banking practices that generate low-cost, sticky core deposits.` },
+        { title: 'Competitive Positioning Review',
+          body: `Run a competitive rate analysis for your market. Understanding where peer institutions are pricing deposits positions your team to retain deposits without overpaying.` },
+        { title: 'Capacity Planning',
+          body: `With a strong funding base, evaluate loan growth capacity and whether the balance sheet is optimally deployed. Healthy liquidity should be leveraged — not left idle in low-yield instruments.` },
+      ],
+    };
+    return recs[zone.key] || recs.low;
+  }
+
+  // ══════════════════════════════════════════════════════════
+  //  RENDER REPORT
+  // ══════════════════════════════════════════════════════════
+  function renderReport(cert, name, inst, fins) {
+    currentBankName = name;
+    const latest  = fins[0];
+    const oldest  = fins[fins.length - 1];
+
+    // ── Core metrics ──
+    const assets     = latest.ASSET    || 0;
+    const dep        = latest.DEP      || latest.DEPDOM || 0;
+    const loans      = latest.LNLSNET  || 0;
+    const eq         = latest.EQ       || 0;
+    const intInc     = latest.INTINC   || 0;   // Total interest income (dollars)
+    const intExp     = latest.EINTEXP  || 0;   // Total interest expense (dollars)
+    const cofRate    = latest.INTEXPY  || 0;   // Interest expense rate % — pre-calculated by FDIC
+    const nim        = latest.NIMY     || 0;   // Net interest margin % — pre-calculated by FDIC
+    const coredep    = latest.COREDEP  || 0;   // FDIC pre-calculated core deposits
+
+    // Ratios
+    const lcdRatio    = coredep > 0 ? loans / coredep : (dep > 0 ? loans / dep : 0);
+    const eqRatio     = assets > 0 ? (eq / assets) * 100 : 0;
+    const nonCoreEst  = (coredep > 0 && dep > 0) ? Math.max(0, dep - coredep) : 0;
+    const nonCoreRatio= (coredep > 0 && dep > 0) ? (nonCoreEst / dep * 100) : 0;
+
+    // ── Severity helpers ──
+    function lcdSev()    { return lcdRatio >= 1.10 ? 'red' : lcdRatio >= 1.0 ? 'orange' : lcdRatio >= 0.85 ? 'amber' : 'green'; }
+    function cofSev()    { return cofRate  >= 2.5  ? 'red' : cofRate >= 2.0  ? 'orange' : cofRate >= 1.5   ? 'amber' : 'green'; }
+    function ncdSev()    { return nonCoreRatio >= 20 ? 'red' : nonCoreRatio >= 15 ? 'orange' : nonCoreRatio >= 8 ? 'amber' : 'green'; }
+    function nimSev()    { return nim < 2.4 ? 'red' : nim < 2.8 ? 'orange' : nim < 3.2 ? 'amber' : 'green'; }
+    function capSev()    { return eqRatio < 8 ? 'red' : eqRatio < 9 ? 'orange' : eqRatio < 10 ? 'amber' : 'green'; }
+    function cdconcSev() { return nonCoreRatio >= 50 ? 'red' : nonCoreRatio >= 40 ? 'orange' : nonCoreRatio >= 28 ? 'amber' : 'green'; }
+
+    // ── Pressure score ──
+    function sevScore(s) { return { red: 25, orange: 18, amber: 10, green: 0 }[s] || 0; }
+    const pressureScore = Math.min(100,
+      sevScore(lcdSev()) + sevScore(cofSev()) + sevScore(ncdSev()) +
+      sevScore(nimSev()) + sevScore(capSev()) + sevScore(cdconcSev())
+    );
+    const zone = pressureZone(pressureScore);
+
+    // ── Populate currentDriverData ──
+    currentDriverData = {};
+
+    if (lcdSev() !== 'green') {
+      const pctile = lcdRatio > 1.1 ? '85' : lcdRatio > 1.0 ? '75' : '65';
+      currentDriverData.lcd = {
+        id: 'lcd', icon: '💧', title: 'Liquidity Stress', severity: lcdSev(),
+        metric: `Loan/Core Dep: ${r2(lcdRatio)}`,
+        teaser: lcdRatio >= 1.0 ? 'Core deposits cannot fully fund the loan book.' : 'Loan growth is approaching core deposit limits.',
+        narrative: `<p>The loan-to-core-deposit ratio measures how well a bank's stable, relationship-based deposit funding covers its outstanding loan book. A ratio above 1.0 means the bank is funding some portion of its loans with wholesale, brokered, or rate-sensitive deposits rather than with core customer relationships.</p>
+          <p><strong>${name}'s ratio of ${r2(lcdRatio)}</strong> places it at approximately the ${pctile}th percentile among all FDIC-insured institutions. The industry median is 0.89, meaning the majority of banks maintain more core deposit funding than loans outstanding. A ratio above 1.0 is not automatically a crisis — high-performing lenders can sustain elevated ratios — but it leaves significantly less margin for error. Any acceleration in loan growth, deposit attrition, or rising rate environment will amplify funding cost pressure rapidly.</p>
+          <p>Banks in this position often respond by increasing CD rates to attract retail deposits. This is typically a self-defeating strategy: higher CD rates attract rate-sensitive deposits that will leave when rates normalize, while doing nothing to address the underlying core relationship deficit.</p>`,
+        implication: `<p>${name}'s loan book of ${fmtM(loans)} against FDIC-calculated core deposits of ${fmtM(coredep)} produces a loan-to-core-deposit ratio of ${r2(lcdRatio)}, above the community bank peer median of 0.85. This means the bank is funding a meaningful portion of its loans with large-denomination CDs, brokered deposits, or wholesale sources — a compounding cost and risk dynamic in the current environment.</p>`,
+        metricBox: { rows: [
+          { label: 'Loans & Leases', value: fmtM(loans) },
+          { label: 'Core Deposits (FDIC)', value: fmtM(coredep) },
+          { label: 'Ratio', value: r2(lcdRatio), highlight: true },
+          { label: 'Peer Median', value: '0.85' },
+          { label: 'vs. Peer', value: (((lcdRatio - 0.85)/0.85)*100).toFixed(0) + '%', alert: true },
+        ]},
+        active: true,
+      };
+    }
+
+    if (cofSev() !== 'green') {
+      currentDriverData.cof = {
+        id: 'cof', icon: '💰', title: 'Cost of Funds Pressure', severity: cofSev(),
+        metric: `Cost of Funds: ${pct(cofRate)}`,
+        teaser: 'Funding costs are above peer median, compressing margin.',
+        narrative: `<p>Cost of funds — total interest expense divided by average earning assets — is one of the most direct measures of a bank's funding efficiency. It represents what the bank pays, in aggregate, for every dollar of assets it holds.</p>
+          <p><strong>${name} is paying ${pct(cofRate)}</strong> on its funding base. Community bank peer median cost of funds has ranged from 1.2% to 2.2% in recent quarters depending on rate environment. When a bank's cost of funds consistently exceeds peer, it signals either (a) a deposit mix weighted toward high-cost instruments, (b) aggressive rate competition to stem outflows, or (c) growing reliance on wholesale and brokered sources.</p>
+          <p>The danger is the margin squeeze: a net interest margin of ${pct(nim)} against a cost of funds of ${pct(cofRate)} leaves ${r2(nim - cofRate)}% of spread. If rates shift or competition intensifies, this spread can compress rapidly. For context, community banks historically needed a NIM of 3.5%+ to comfortably absorb credit costs and operating expenses — current margins leave significantly less cushion.</p>`,
+        implication: `<p>${name}'s cost of funds of ${pct(cofRate)} against a NIM of ${pct(nim)} produces a spread of ${r2(nim - cofRate)}%. On a ${fmtM(assets)} asset base, each 10 basis point move in funding cost represents approximately ${fmtM(Math.round(assets * 0.001))} in annual interest expense impact.</p>`,
+        metricBox: { rows: [
+          { label: 'Cost of Funds', value: pct(cofRate), highlight: true },
+          { label: 'Net Interest Margin', value: pct(nim) },
+          { label: 'Spread', value: r2(nim - cofRate) + '%' },
+          { label: 'Total Interest Expense', value: fmtM(intExp) },
+          { label: 'Peer Median COF', value: '1.60%' },
+        ]},
+        active: true,
+      };
+    }
+
+    if (ncdSev() !== 'green') {
+      currentDriverData.ncd = {
+        id: 'ncd', icon: '⚠️', title: 'Non-Core Deposit Dependency', severity: ncdSev(),
+        metric: `Non-Core Est: ${r2(nonCoreRatio)}% of deposits`,
+        teaser: 'Rate-sensitive funding represents outsized share of deposit base.',
+        narrative: `<p>Non-core deposits — broadly defined as brokered deposits, internet-listed CDs, large-balance time deposits, and other rate-sensitive instruments — represent the most volatile layer of a bank's funding base. Unlike core deposits anchored by banking relationships, non-core deposits will leave for marginally better rates at competing institutions.</p>
+          <p><strong>${name}'s non-core exposure is estimated at ${r2(nonCoreRatio)}% of total deposits</strong>, representing approximately ${fmtM(nonCoreEst)} of the deposit base. This concentration creates two distinct risks: repricing risk (these deposits demand higher rates when they roll) and attrition risk (they may not renew regardless of offered rate if a competitor is more aggressive). The FDIC and banking regulators treat high non-core ratios as a liquidity risk indicator; examiners often flag institutions above 20% for enhanced scrutiny.</p>
+          <p>The practical implication: management cannot count on these funds being present 12–18 months from now without paying up for them. Any stress scenario — a rate spike, a competitor promotion, or a credit quality concern — accelerates their exit.</p>`,
+        implication: `<p>At ${name}, the FDIC-calculated core deposit base is ${fmtM(coredep)}, leaving ${fmtM(nonCoreEst)} (${r2(nonCoreRatio)}% of total deposits) classified as non-core — large-denomination CDs, brokered deposits, and similar rate-sensitive instruments. If only 20% of this balance were to exit or reprice materially higher, the impact on funding costs and liquidity would be immediate and significant.</p>`,
+        metricBox: { rows: [
+          { label: 'Non-Core Deposits', value: fmtM(nonCoreEst), highlight: true },
+          { label: '% of Total Deposits', value: r2(nonCoreRatio) + '%', alert: true },
+          { label: 'Total Deposits', value: fmtM(dep) },
+          { label: 'Core Deposits (est.)', value: fmtM(coredep) },
+          { label: 'Regulatory Watch Threshold', value: '20%' },
+        ]},
+        active: true,
+      };
+    }
+
+    if (nimSev() !== 'green') {
+      const bpImpact = fmtM(Math.round(assets * 0.001));
+      const nimVsPeer = nim < 3.3 ? 'below' : 'near';
+      currentDriverData.nim = {
+        id: 'nim', icon: '📉', title: 'Net Interest Margin Compression', severity: nimSev(),
+        metric: `NIM: ${pct(nim)}`,
+        teaser: 'Net interest margin is below community bank peer median.',
+        narrative: `<p>Net interest margin — the spread between what a bank earns on its assets and what it pays for its liabilities — is the engine of community bank profitability. Unlike fee-heavy large banks, community institutions depend on NIM for 70–80% of their revenue.</p>
+          <p><strong>${name}'s NIM of ${pct(nim)}</strong> is ${nimVsPeer} the community bank peer median of approximately 3.2–3.4% in the current rate environment. Every 10 basis points of NIM compression on a ${fmtM(assets)} asset base translates to approximately ${bpImpact} of annual pre-tax income. When NIM falls below 2.8%, a bank's ability to absorb credit costs, provision adequately for loan losses, and maintain operating expense coverage narrows significantly.</p>
+          <p>NIM compression at this institution is most likely driven by: (1) rising funding costs outpacing asset yield repricing, (2) a loan mix that is not generating sufficient spread to offset deposit costs, or (3) an investment portfolio locked into lower-yield instruments that cannot reprice in the current environment.</p>`,
+        implication: `<p>${name}'s NIM of ${pct(nim)} means each 10bp of further compression costs approximately ${bpImpact} annually in pre-tax income. With funding costs elevated, protecting NIM requires either growing higher-yielding assets or actively reducing funding costs — both require deliberate strategy.</p>`,
+        metricBox: { rows: [
+          { label: 'Net Interest Margin', value: pct(nim), highlight: true },
+          { label: 'Total Interest Income', value: fmtM(intInc) },
+          { label: 'Total Interest Expense', value: fmtM(intExp) },
+          { label: 'Total Assets', value: fmtM(assets) },
+          { label: 'Peer Median NIM', value: '3.30%' },
+        ]},
+        active: true,
+      };
+    }
+
+    if (capSev() !== 'green') {
+      currentDriverData.capital = {
+        id: 'capital', icon: '🏦', title: 'Capital Adequacy Watch', severity: capSev(),
+        metric: `Equity/Assets: ${r2(eqRatio)}%`,
+        teaser: 'Capital cushion is below well-capitalized peer benchmarks.',
+        narrative: `<p>The equity-to-assets ratio is a simple but powerful measure of a bank's capital cushion. While regulatory capital ratios (CET1, Tier 1) are more precise, the equity/assets ratio from FDIC Call Report data provides an accessible proxy for capital adequacy. Well-capitalized community banks typically maintain equity-to-assets ratios of 10–12%.</p>
+          <p><strong>${name}'s equity/assets ratio of ${r2(eqRatio)}%</strong> warrants monitoring. Thinner capital cushions limit a bank's ability to absorb unexpected loan losses, restrict organic loan growth capacity, and can trigger heightened regulatory attention. When combined with funding pressure — which can suppress earnings and reduce retained earnings accrual — a below-average capital ratio creates a compounding vulnerability.</p>
+          <p>From a deposit strategy perspective, capital adequacy matters because it affects the institution's credit profile and, ultimately, its ability to attract and retain deposits from sophisticated depositors. Corporate treasurers and large depositors monitor bank capital ratios. Thin capital can accelerate deposit flight in stress scenarios.</p>`,
+        implication: `<p>${name}'s equity/assets ratio of ${r2(eqRatio)}% vs. the well-capitalized benchmark of 10%+ suggests limited capital buffer. Combined with the funding pressures identified in this report, the margin for absorbing unexpected stress is narrower than peers. This dynamic can become self-reinforcing if earnings are suppressed by funding costs.</p>`,
+        metricBox: { rows: [
+          { label: 'Total Equity', value: fmtM(eq) },
+          { label: 'Total Assets', value: fmtM(assets) },
+          { label: 'Equity/Assets Ratio', value: r2(eqRatio) + '%', highlight: true },
+          { label: 'Well-Capitalized Benchmark', value: '10%+' },
+          { label: 'Peer Median', value: '10.8%' },
+        ]},
+        active: true,
+      };
+    }
+
+    if (cdconcSev() !== 'green') {
+      const cdPct = r2(nonCoreRatio);
+      const cdDollars = fmtM(nonCoreEst);
+      const cdSev = cdconcSev();
+      currentDriverData.cdconc = {
+        id: 'cdconc', icon: '⏱', title: 'CD Concentration Risk', severity: cdSev,
+        metric: `Non-Core/Time Deposits: ${cdPct}% of total`,
+        teaser: 'High CD concentration creates periodic repricing cliff risk.',
+        narrative: `<p>CD concentration risk refers to the degree to which a bank's deposit base is dominated by time deposits — CDs, jumbo deposits, and similar maturity-dated instruments. Unlike demand or savings balances, time deposits mature on a fixed schedule, creating a "repricing cliff" effect: when a large block of CDs matures simultaneously, the bank must either reprice the entire block to current market rates or risk losing those deposits to competitors.</p>
+          <p><strong>${name}'s non-core deposit base represents ${cdPct}% of total deposits</strong>, or approximately ${cdDollars}. At this concentration level, a meaningful portion of the deposit base is subject to periodic repricing events rather than gradual drift. If the rate environment remains elevated or competitors are aggressive, renewal rates on maturing CDs will exceed the original cost — automatically widening funding costs without any management action required.</p>
+          <p>The danger compounds when CD concentrations coincide with other funding pressures. A bank simultaneously managing thin margins, elevated cost of funds, and high CD concentration has limited levers available when a repricing cycle arrives. Each CD maturity date becomes a pricing negotiation the bank cannot afford to lose.</p>`,
+        implication: `<p>At ${name}, an estimated ${cdPct}% of total deposits are concentrated in rate-sensitive, maturity-dated instruments. This creates predictable repricing windows where funding costs will reset — at whatever the market rate is at that moment. With a current cost of funds of ${pct(cofRate)}, further repricing pressure from CD rollovers will compress an already tight margin. Proactive deposit mix strategy is the only durable solution.</p>`,
+        metricBox: { rows: [
+          { label: 'Non-Core/Time Deposits', value: cdDollars, highlight: true },
+          { label: '% of Total Deposits', value: cdPct + '%', alert: true },
+          { label: 'Total Deposits', value: fmtM(dep) },
+          { label: 'Core Deposits (FDIC)', value: fmtM(coredep) },
+          { label: 'Concentration Watch Threshold', value: '28%' },
+        ]},
+        active: true,
+      };
+    }
+
+    const activeDrivers = Object.values(currentDriverData).filter(d => d.active);
+
+    // ── Zone banner ──
+    const zoneBanner = document.getElementById('zoneBanner');
+    zoneBanner.className = 'zone-banner ' + zone.cls;
+    document.getElementById('zoneLabel').textContent = zone.label;
+    document.getElementById('zoneDesc').textContent =
+      `Pressure Score: ${pressureScore}/100 · ${activeDrivers.length} active funding pressure driver${activeDrivers.length !== 1 ? 's' : ''} identified from FDIC data.`;
+
+    // ── Report header ──
+    document.getElementById('reportBankName').textContent = name;
+    document.getElementById('reportBankMeta').textContent =
+      `${inst.CITY || ''}, ${inst.STALP || ''} · FDIC Cert ${cert} · ${fmtM(assets)} in assets · Report Date: ${latest.REPDTE || 'N/A'}`;
+
+    // ── Print header ──
+    document.getElementById('printBankName').textContent = name;
+
+    // ── KPI Tiles ──
+    const kpiData = [
+      { label: 'Pressure Score', value: pressureScore, sub: zone.label, cls: zone.key === 'crit' ? 'kpi-red' : zone.key === 'high' ? 'kpi-orange' : zone.key === 'mod' ? 'kpi-amber' : 'kpi-green' },
+      { label: 'Loan/Core Dep', value: r2(lcdRatio), sub: 'Peer: ~0.85', cls: lcdSev() === 'green' ? 'kpi-green' : lcdSev() === 'amber' ? 'kpi-amber' : 'kpi-red' },
+      { label: 'Cost of Funds', value: pct(cofRate), sub: 'Peer: ~1.60%', cls: cofSev() === 'green' ? 'kpi-green' : cofSev() === 'amber' ? 'kpi-amber' : 'kpi-red' },
+      { label: 'Net Int. Margin', value: pct(nim), sub: 'Peer: ~3.30%', cls: nimSev() === 'green' ? 'kpi-green' : nimSev() === 'amber' ? 'kpi-amber' : 'kpi-red' },
+      { label: 'Equity/Assets', value: r2(eqRatio) + '%', sub: 'Benchmark: 10%+', cls: capSev() === 'green' ? 'kpi-green' : capSev() === 'amber' ? 'kpi-amber' : 'kpi-red' },
+    ];
+    document.getElementById('kpiGrid').innerHTML = kpiData.map(k =>
+      `<div class="kpi-tile ${k.cls}">
+        <div class="kpi-label">${k.label}</div>
+        <div class="kpi-value">${k.value}</div>
+        <div class="kpi-sub">${k.sub}</div>
+      </div>`
+    ).join('');
+
+    // ── Balance Snapshot ──
+    const snapItems = [
+      { label: 'Total Assets',       value: fmtM(assets) },
+      { label: 'Total Deposits',     value: fmtM(dep) },
+      { label: 'Net Loans',          value: fmtM(loans) },
+      { label: 'Interest Income',    value: fmtM(intInc) },
+      { label: 'Interest Expense',   value: fmtM(intExp) },
+      { label: 'Core Deposits',      value: coredep > 0 ? fmtM(coredep) : 'N/A' },
+    ];
+    document.getElementById('balanceSnap').innerHTML = snapItems.map(s =>
+      `<div class="balance-snap-cell">
+        <div class="bs-label">${s.label}</div>
+        <div class="bs-value">${s.value}</div>
+      </div>`
+    ).join('');
+
+    // ── Gauge ──
+    renderGauge(pressureScore, zone.color);
+
+    // ── Exec Summary ──
+    const driverNames = activeDrivers.map(d => d.title).join(', ');
+    document.getElementById('execSummary').innerHTML =
+      `<p><strong>${name}</strong> carries a funding pressure score of <strong>${pressureScore}/100</strong>, placing it in the <strong>${zone.label}</strong> zone based on FDIC Call Report data through ${latest.REPDTE || 'the most recent quarter'}.</p>
+      <p>Analysis of the institution's financial statements identifies ${activeDrivers.length} active pressure driver${activeDrivers.length !== 1 ? 's' : ''}: ${driverNames || 'none detected'}. Total assets are ${fmtM(assets)}, with a loan-to-core-deposit ratio of ${r2(lcdRatio)}, cost of funds of ${pct(cofRate)}, and net interest margin of ${pct(nim)}. The equity-to-assets ratio stands at ${r2(eqRatio)}%.</p>
+      ${pressureScore >= 45 ? `<p>The funding profile warrants active attention. The drivers identified in this report — individually and in combination — create compounding risk if unaddressed. A proactive deposit strategy review is recommended before market conditions tighten further.</p>` : `<p>The funding profile is currently manageable. Continued monitoring of the identified metrics against peer benchmarks is recommended to catch any deterioration early.</p>`}`;
+
+    // ── Driver Cards ──
+    const grid = document.getElementById('driverCardsGrid');
+    if (activeDrivers.length) {
+      grid.innerHTML = activeDrivers.map(d =>
+        `<div class="driver-card" data-driver-id="${d.id}" onclick="openDriverModal('${d.id}')">
+          <div class="driver-card-severity severity-${d.severity}"></div>
+          <div class="driver-card-body">
+            <div class="driver-card-icon">${d.icon}</div>
+            <div class="driver-card-title">${d.title}</div>
+            <div class="driver-card-metric">${d.metric}</div>
+            <div class="driver-card-teaser">${d.teaser}</div>
+            <div class="driver-card-expand-hint">Tap for full analysis ›</div>
+          </div>
+        </div>`
+      ).join('');
+    } else {
+      grid.innerHTML = '<p style="color:var(--text-light);font-size:14px;">No significant pressure drivers detected. All key metrics are within healthy ranges.</p>';
+    }
+
+    // ── Recommendations ──
+    const recs = generateRecs(zone, name, {});
+    document.getElementById('recsGrid').innerHTML = recs.map((r, i) =>
+      `<div class="rec-card">
+        <div class="rec-num">${i + 1}</div>
+        <div class="rec-title">${r.title}</div>
+        <div class="rec-body">${r.body}</div>
+      </div>`
+    ).join('');
+
+    // ── Radar Chart ──
+    const radarScores = [
+      Math.min(100, sevScore(lcdSev()) * 4),
+      Math.min(100, sevScore(cofSev()) * 4),
+      Math.min(100, sevScore(ncdSev()) * 4),
+      Math.min(100, sevScore(nimSev()) * 4),
+      Math.min(100, sevScore(capSev()) * 4),
+    ];
+    chartInstances.radar = new Chart(document.getElementById('radarChart'), {
+      type: 'radar',
+      data: {
+        labels: ['Liquidity', 'Cost of Funds', 'Non-Core Dep', 'NIM', 'Capital'],
+        datasets: [{
+          label: name,
+          data: radarScores,
+          backgroundColor: 'rgba(201,168,76,0.18)',
+          borderColor: '#c9a84c',
+          borderWidth: 2,
+          pointBackgroundColor: '#c9a84c',
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        scales: { r: { min: 0, max: 100, ticks: { display: false }, grid: { color: '#e2e8f0' }, pointLabels: { font: { size: 11 } } } },
+        plugins: { legend: { display: false } }
+      }
+    });
+
+    // ── COF Trend Chart ──
+    const cofDates  = fins.map(f => f.REPDTE).reverse();
+    const cofValues = fins.map(f => f.INTEXPY || 0).reverse();  // INTEXPY is already a % (pre-calculated by FDIC)
+    chartInstances.cof = new Chart(document.getElementById('cofChart'), {
+      type: 'line',
+      data: {
+        labels: cofDates,
+        datasets: [{
+          label: 'Cost of Funds %',
+          data: cofValues,
+          borderColor: '#c9a84c',
+          backgroundColor: 'rgba(201,168,76,0.1)',
+          borderWidth: 2,
+          fill: true,
+          tension: 0.3,
+          pointRadius: 4,
+          pointBackgroundColor: '#c9a84c',
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        scales: {
+          x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+          y: { grid: { color: '#e2e8f0' }, ticks: { callback: v => v.toFixed(2) + '%', font: { size: 10 } } }
+        },
+        plugins: { legend: { display: false } }
+      }
+    });
+
+    // ── Deposit Mix Chart ──
+    const depNI      = latest.DEPNIDOM || 0;
+    const depIBCore  = coredep > depNI ? coredep - depNI : 0;  // interest-bearing core (savings, MMA, small CDs)
+    const depNonCore = dep > coredep   ? dep - coredep    : 0;  // non-core (large CDs, brokered, wholesale)
+    chartInstances.mix = new Chart(document.getElementById('mixChart'), {
+      type: 'doughnut',
+      data: {
+        labels: ['Non-Interest Bearing', 'Interest-Bearing Core', 'Non-Core / Rate-Sensitive'],
+        datasets: [{
+          data: [depNI, depIBCore, depNonCore],
+          backgroundColor: ['#0a1628','#c9a84c','#dc2626'],
+          borderWidth: 2,
+          borderColor: '#fff',
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'right', labels: { font: { size: 10 }, boxWidth: 12 } }
+        }
+      }
+    });
+
+    document.getElementById('reportOutput').style.setProperty('display', 'block', 'important');
+  }
+
+  // ══════════════════════════════════════════════════════════
+  //  GAUGE SVG
+  // ══════════════════════════════════════════════════════════
+  function renderGauge(score, color) {
+    const arcLen  = 251;
+    const offset  = arcLen - (score / 100) * arcLen;
+    const angle   = -180 + (score / 100) * 180;
+    const rad     = (angle * Math.PI) / 180;
+    const nx      = 100 + 72 * Math.cos(rad);
+    const ny      = 100 + 72 * Math.sin(rad);
+
+    const arc = document.getElementById('gaugeArc');
+    arc.setAttribute('stroke', color);
+    arc.setAttribute('stroke-dashoffset', offset);
+
+    const needle = document.getElementById('gaugeNeedle');
+    needle.setAttribute('x2', nx.toFixed(1));
+    needle.setAttribute('y2', ny.toFixed(1));
+
+    document.getElementById('gaugeScore').textContent = score;
+    const zoneEl = document.getElementById('gaugeZone');
+    const z = pressureZone(score);
+    zoneEl.textContent = z.label;
+    zoneEl.style.color = color;
+  }
+
+  // ══════════════════════════════════════════════════════════
+  //  MODAL
+  // ══════════════════════════════════════════════════════════
+  function openDriverModal(driverId) {
+    const d = currentDriverData[driverId];
+    if (!d) return;
+
+    const color = severityColor(d.severity);
+    document.getElementById('modalSeverityBar').style.background = color;
+    document.getElementById('modalIcon').textContent  = d.icon;
+    document.getElementById('modalTitle').textContent = d.title;
+
+    const badge = document.getElementById('modalBadge');
+    badge.textContent  = d.severity.charAt(0).toUpperCase() + d.severity.slice(1) + ' Severity';
+    badge.className    = 'modal-badge badge-' + d.severity;
+
+    // Metric box
+    const metricRows = d.metricBox.rows.map(r =>
+      `<tr>
+        <td>${r.label}</td>
+        <td class="${r.highlight ? 'highlight' : r.alert ? 'alert' : ''}">${r.value}</td>
+      </tr>`
+    ).join('');
+    document.getElementById('modalMetricBox').innerHTML = `<table class="metric-table">${metricRows}</table>`;
+
+    document.getElementById('modalNarrative').innerHTML  = d.narrative;
+    document.getElementById('modalImplication').innerHTML =
+      `<h3>What This Means for ${currentBankName}</h3>${d.implication}`;
+
+    document.getElementById('driverModal').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeDriverModal(event, force) {
+    if (force || (event && event.target.id === 'driverModal')) {
+      document.getElementById('driverModal').style.display = 'none';
+      document.body.style.overflow = '';
+    }
+  }
+
+  // ══════════════════════════════════════════════════════════
+  //  DESTROY CHARTS
+  // ══════════════════════════════════════════════════════════
+  function destroyCharts() {
+    Object.values(chartInstances).forEach(c => { try { c.destroy(); } catch(e){} });
+    chartInstances = {};
+  }
+
+  // ══════════════════════════════════════════════════════════
+  //  PDF EXPORT
+  // ══════════════════════════════════════════════════════════
+  function prepareChartsForPrint() {
+    ['radar','cof','mix'].forEach(key => {
+      const chart  = chartInstances[key];
+      const id     = key + 'Chart';
+      const canvas = document.getElementById(id);
+      const img    = document.getElementById(id + '-print');
+      if (chart && canvas && img) {
+        try {
+          chart.resize();
+          chart.update('none');
+          img.src = canvas.toDataURL('image/png', 1.0);
+        } catch(e) { console.warn('Chart capture failed for', id, e); }
+      }
+    });
+  }
+
+  function restoreChartsAfterPrint() {
+    ['radarChart','cofChart','mixChart'].forEach(id => {
+      const img = document.getElementById(id + '-print');
+      if (img) { img.src = ''; }
+    });
+  }
+
+  function buildPDFDriverSections() {
+    const container = document.getElementById('pdfDriversContainer');
+    container.innerHTML = '';
+    const activeDrivers = Object.values(currentDriverData).filter(d => d.active);
+    activeDrivers.forEach(driver => {
+      const section = document.createElement('div');
+      section.className = 'pdf-driver-section';
+      section.innerHTML = `
+        <div class="page-break"></div>
+        <div class="pdf-driver-header">
+          <span class="pdf-driver-icon">${driver.icon}</span>
+          <div>
+            <h2>${driver.title}</h2>
+            <div style="font-size:10pt;color:${severityColor(driver.severity)};font-weight:700;text-transform:uppercase;letter-spacing:1px;">${driver.severity.charAt(0).toUpperCase() + driver.severity.slice(1)} Severity · ${driver.metric}</div>
+          </div>
+        </div>
+        <div class="pdf-metric-box">${buildMetricBoxHTML(driver.metricBox)}</div>
+        <div class="pdf-narrative">${driver.narrative}</div>
+        <div class="pdf-implication">
+          <h3>What This Means for ${currentBankName}</h3>
+          ${driver.implication}
+        </div>
+      `;
+      container.appendChild(section);
+    });
+
+    // Appendix
+    const appendix = document.createElement('div');
+    appendix.className = 'pdf-driver-section';
+    appendix.innerHTML = `
+      <div class="page-break"></div>
+      <h2 style="font-size:14pt;color:#0a1628;margin-bottom:1rem;border-bottom:2px solid #0a1628;padding-bottom:0.5rem;">Appendix — Data Sources &amp; Methodology</h2>
+      <h3 style="font-size:11pt;color:#0a1628;margin:1rem 0 0.4rem;">FDIC Data Sources</h3>
+      <p style="font-size:9pt;color:#4a5568;margin-bottom:0.75rem;">All financial data in this report is sourced in real time from the <strong>FDIC BankFind Suite API</strong> (<code>api.fdic.gov/banks</code>), which publishes quarterly Call Report data for all FDIC-insured institutions. No data in this report is estimated, modeled, or sourced from third parties. Key fields used in this analysis:</p>
+      <table style="width:100%;border-collapse:collapse;font-size:8.5pt;margin-bottom:1rem;">
+        <thead><tr style="background:#0a1628;color:#fff;">
+          <th style="padding:5px 8px;text-align:left;">FDIC Field</th>
+          <th style="padding:5px 8px;text-align:left;">Description</th>
+          <th style="padding:5px 8px;text-align:left;">Used In</th>
+        </tr></thead>
+        <tbody>
+          <tr style="background:#f8fafc;"><td style="padding:4px 8px;border-bottom:1px solid #e2e8f0;"><code>COREDEP</code></td><td style="padding:4px 8px;border-bottom:1px solid #e2e8f0;">Core deposits (FDIC pre-calculated; excludes large CDs and brokered deposits)</td><td style="padding:4px 8px;border-bottom:1px solid #e2e8f0;">Liquidity Stress, Non-Core Dependency, CD Concentration</td></tr>
+          <tr><td style="padding:4px 8px;border-bottom:1px solid #e2e8f0;"><code>INTEXPY</code></td><td style="padding:4px 8px;border-bottom:1px solid #e2e8f0;">Interest expense rate % (FDIC pre-calculated; annualized)</td><td style="padding:4px 8px;border-bottom:1px solid #e2e8f0;">Cost of Funds</td></tr>
+          <tr style="background:#f8fafc;"><td style="padding:4px 8px;border-bottom:1px solid #e2e8f0;"><code>NIMY</code></td><td style="padding:4px 8px;border-bottom:1px solid #e2e8f0;">Net interest margin % (FDIC pre-calculated; annualized)</td><td style="padding:4px 8px;border-bottom:1px solid #e2e8f0;">NIM Compression</td></tr>
+          <tr><td style="padding:4px 8px;border-bottom:1px solid #e2e8f0;"><code>LNLSNET</code></td><td style="padding:4px 8px;border-bottom:1px solid #e2e8f0;">Net loans and leases</td><td style="padding:4px 8px;border-bottom:1px solid #e2e8f0;">Liquidity Stress</td></tr>
+          <tr style="background:#f8fafc;"><td style="padding:4px 8px;border-bottom:1px solid #e2e8f0;"><code>EQ</code></td><td style="padding:4px 8px;border-bottom:1px solid #e2e8f0;">Total equity capital</td><td style="padding:4px 8px;border-bottom:1px solid #e2e8f0;">Capital Adequacy</td></tr>
+          <tr><td style="padding:4px 8px;"><code>DEP / ASSET</code></td><td style="padding:4px 8px;">Total deposits / Total assets</td><td style="padding:4px 8px;">All drivers</td></tr>
+        </tbody>
+      </table>
+      <h3 style="font-size:11pt;color:#0a1628;margin:1rem 0 0.4rem;">Scoring Methodology</h3>
+      <p style="font-size:9pt;color:#4a5568;margin-bottom:0.75rem;">The Bank Intelligence Pressure Score is produced by a proprietary composite scoring model that evaluates six independent funding pressure drivers against FDIC Call Report data. Each driver is assessed against tiered thresholds calibrated to community bank peer data. Severity levels contribute 0 (healthy), 10 (amber), 18 (orange), or 25 (red) points to the composite score, which is capped at 100. The six drivers are: Liquidity Stress, Cost of Funds Pressure, Non-Core Deposit Dependency, Net Interest Margin Compression, CD Concentration Risk, and Capital Adequacy Watch.</p>
+      <p style="font-size:9pt;color:#4a5568;margin-bottom:0.75rem;">Pressure zones are defined as: <strong>Low (0–24)</strong> — no material funding stress identified; <strong>Moderate (25–49)</strong> — one or more drivers elevated, monitoring warranted; <strong>Elevated (50–74)</strong> — multiple drivers active, funding strategy review recommended; <strong>Critical (75–100)</strong> — acute multi-driver stress, immediate strategic intervention indicated.</p>
+      <h3 style="font-size:11pt;color:#0a1628;margin:1rem 0 0.4rem;">Disclaimer</h3>
+      <p style="font-size:8.5pt;color:#6b7280;">This report is produced for informational and consulting purposes only. All data is sourced from publicly available FDIC Call Report filings. Bank Intelligence and its scoring model do not constitute investment advice, regulatory guidance, or a safety-and-soundness assessment. Past performance of financial metrics does not guarantee future results. This report is intended for use by qualified financial professionals and should be interpreted in the context of a comprehensive institution review. Data is typically available 60–90 days after quarter-end and may not reflect the most recent quarter for all institutions.</p>
+    `;
+    container.appendChild(appendix);
+  }
+
+  function exportPDF() {
+    buildPDFDriverSections();
+    document.body.classList.add('printing-report');
+    var oldTitle = document.title;
+    document.title = '';
+    Object.values(chartInstances).forEach(c => { try { c.resize(); } catch(e){} });
+    setTimeout(() => {
+      prepareChartsForPrint();
+      document.getElementById('printHeader').style.display = 'flex';
+      setTimeout(() => {
+        window.print();
+        setTimeout(() => {
+          restoreChartsAfterPrint();
+          document.getElementById('printHeader').style.display = 'none';
+          document.body.classList.remove('printing-report');
+          document.title = oldTitle;
+        }, 1000);
+      }, 600);
+    }, 400);
+  }
+
+  // ══════════════════════════════════════════════════════════
+  //  PRESSURE SCANNER
+  // ══════════════════════════════════════════════════════════
+  const DRIVER_ICONS = {
+    lcd:     { icon: '💧', label: 'Liquidity' },
+    cof:     { icon: '💰', label: 'Cost of Funds' },
+    ncd:     { icon: '⚠️', label: 'Non-Core Dep' },
+    nim:     { icon: '📉', label: 'NIM' },
+    cdconc:  { icon: '⏱', label: 'CD Conc.' },
+    capital: { icon: '🏦', label: 'Capital' },
+  };
+
+  function scoreBank(f) {
+    if (!f) return { score: 0, activeDriverIds: [] };
+    const assets  = f.ASSET   || 0;
+    const dep     = f.DEP     || f.DEPDOM || 0;
+    const loans   = f.LNLSNET || 0;
+    const eq      = f.EQ      || 0;
+    const coredep = f.COREDEP || 0;  // FDIC pre-calculated core deposits
+
+    const lcd  = coredep > 0 ? loans / coredep : (dep > 0 ? loans / dep : 0);
+    const cof  = f.INTEXPY || 0;   // pre-calculated % (interest expense / avg assets)
+    const nim  = f.NIMY    || 0;   // pre-calculated NIM %
+    const nc   = (coredep > 0 && dep > 0) ? (Math.max(0, dep - coredep) / dep * 100) : 0;
+    const eqR  = assets > 0 ? (eq / assets) * 100 : 0;
+
+    function sev(v, thresholds) {
+      if (v >= thresholds[0]) return 'red';
+      if (v >= thresholds[1]) return 'orange';
+      if (v >= thresholds[2]) return 'amber';
+      return 'green';
+    }
+    function sevLow(v, thresholds) {
+      if (v < thresholds[0]) return 'red';
+      if (v < thresholds[1]) return 'orange';
+      if (v < thresholds[2]) return 'amber';
+      return 'green';
+    }
+
+    const sevScore = s => ({ red: 25, orange: 18, amber: 10, green: 0 }[s]);
+
+    const lcdS   = sev(lcd, [1.10, 1.0, 0.85]);
+    const cofS   = sev(cof, [2.5, 2.0, 1.5]);
+    const ncS    = sev(nc,  [20, 15, 8]);
+    const nimS   = sevLow(nim, [2.4, 2.8, 3.2]);
+    const capS   = sevLow(eqR, [8, 9, 10]);
+    const cdS    = sev(nc,  [50, 40, 28]);
+
+    const score = Math.min(100, sevScore(lcdS) + sevScore(cofS) + sevScore(ncS) + sevScore(nimS) + sevScore(capS) + sevScore(cdS));
+
+    const activeDriverIds = [];
+    if (lcdS !== 'green') activeDriverIds.push('lcd');
+    if (cofS !== 'green') activeDriverIds.push('cof');
+    if (ncS  !== 'green') activeDriverIds.push('ncd');
+    if (nimS !== 'green') activeDriverIds.push('nim');
+    if (capS !== 'green') activeDriverIds.push('capital');
+    if (cdS  !== 'green') activeDriverIds.push('cdconc');
+
+    return { score, activeDriverIds };
+  }
+
+  async function runScanner() {
+    const zone     = document.getElementById('filterZone').value;
+    const state    = document.getElementById('filterState').value;
+    const minAsset = parseInt(document.getElementById('filterMinAsset').value) || 0;
+    const maxAsset = parseInt(document.getElementById('filterMaxAsset').value) || 999999999;
+
+    // Reset sort to score desc on each new scan
+    scannerSortCol = 'score';
+    scannerSortDir = 'desc';
+
+    document.getElementById('scannerStatus').textContent = 'Fetching institutions from FDIC…';
+    document.getElementById('scannerBody').innerHTML = '';
+
+    try {
+      // Step 1: fetch matching institutions
+      let instFilters = 'ACTIVE%3A1';
+      if (state) instFilters += '%20AND%20STALP%3A' + state;
+      if (minAsset) instFilters += '%20AND%20ASSET%3A%5B' + (minAsset * 1000) + '%20TO%20999999999%5D';
+      if (maxAsset < 999999999) instFilters += '%20AND%20ASSET%3A%5B0%20TO%20' + (maxAsset * 1000) + '%5D';
+
+      const instUrl = 'https://api.fdic.gov/banks/institutions?filters=' + instFilters + '&fields=NAME,CERT,STALP,CITY,ASSET,CLASS&limit=30&sort_by=ASSET&sort_order=DESC';
+      const instRes = await fetch(instUrl);
+      if (!instRes.ok) throw new Error('Institutions fetch failed: ' + instRes.status);
+      const instJson = await instRes.json();
+      const institutions = (instJson.data || []).map(d => d.data);
+
+      if (!institutions.length) {
+        document.getElementById('scannerStatus').textContent = 'No institutions matched your filters.';
+        return;
+      }
+
+      document.getElementById('scannerStatus').textContent = 'Scoring ' + institutions.length + ' institutions…';
+
+      // Step 2: batch fetch financials
+      const finFields = 'CERT,REPDTE,ASSET,DEP,DEPDOM,LNLSNET,EQ,INTEXPY,NIMY,DEPNIDOM,DEPIDOM,COREDEP';
+      const certList  = institutions.map(i => i.CERT).join('%20OR%20CERT%3A');
+      const finUrl    = 'https://api.fdic.gov/banks/financials?filters=CERT%3A' + certList + '&fields=' + finFields + '&limit=30&sort_by=REPDTE&sort_order=DESC';
+      const finRes    = await fetch(finUrl);
+      const finJson   = finRes.ok ? await finRes.json() : { data: [] };
+
+      const finMap = {};
+      (finJson.data || []).forEach(d => {
+        const f = d.data;
+        if (f && f.CERT && !finMap[f.CERT]) finMap[f.CERT] = f;
+      });
+
+      let rows = institutions.map(inst => {
+        const f = finMap[inst.CERT] || {};
+        const { score, activeDriverIds } = scoreBank(f);
+        return { inst, score, activeDriverIds, zone: pressureZone(score) };
+      });
+
+      // Zone filter
+      if (zone) rows = rows.filter(r => r.zone.key === zone);
+
+      renderScannerResults(rows);
+    } catch(e) {
+      document.getElementById('scannerStatus').textContent = 'Error fetching data. Please try again.';
+    }
+  }
+
+  function renderScannerResults(rows) {
+    scannerRows = rows;
+    applyScannerSort();
+  }
+
+  function sortScanner(col) {
+    if (scannerSortCol === col) {
+      scannerSortDir = scannerSortDir === 'desc' ? 'asc' : 'desc';
+    } else {
+      scannerSortCol = col;
+      scannerSortDir = col === 'name' || col === 'state' ? 'asc' : 'desc';
+    }
+    applyScannerSort();
+  }
+
+  function applyScannerSort() {
+    if (!scannerRows.length) return;
+
+    var sorted = scannerRows.slice().sort(function(a, b) {
+      var v;
+      switch (scannerSortCol) {
+        case 'name':    v = (a.inst.NAME || '').localeCompare(b.inst.NAME || ''); break;
+        case 'state':   v = (a.inst.STALP || '').localeCompare(b.inst.STALP || ''); break;
+        case 'asset':   v = (a.inst.ASSET || 0) - (b.inst.ASSET || 0); break;
+        case 'score':   v = a.score - b.score; break;
+        case 'zone':    v = a.score - b.score; break;
+        case 'drivers': v = a.activeDriverIds.length - b.activeDriverIds.length; break;
+        default:        v = 0;
+      }
+      return scannerSortDir === 'desc' ? -v : v;
+    });
+
+    // Update header indicators
+    var cols = ['name','state','asset','score','zone','drivers'];
+    cols.forEach(function(c) {
+      var el = document.getElementById('th-' + c);
+      if (!el) return;
+      var ind = el.querySelector('.sort-ind');
+      if (!ind) return;
+      if (c === scannerSortCol) {
+        ind.textContent = scannerSortDir === 'desc' ? '▼' : '▲';
+      } else {
+        ind.textContent = '';
+      }
+    });
+
+    var count = sorted.length;
+    document.getElementById('scannerStatus').textContent =
+      count + ' institution' + (count !== 1 ? 's' : '') + ' found. Click column headers to sort.';
+
+    var DRIVER_TIPS = {
+      lcd:     '<strong>💧 Liquidity Stress</strong><br>Loan/Core Deposit Ratio measures how well stable deposits fund the loan book. Above 1.0 = relying on wholesale funding.',
+      cof:     '<strong>💰 Cost of Funds</strong><br>Interest expense as % of avg assets (INTEXPY). Elevated COF signals rate competition or high-cost deposit reliance.',
+      ncd:     '<strong>⚠️ Non-Core Deposits</strong><br>Estimated rate-sensitive deposits as % of total. Above 20% triggers regulatory watch.',
+      nim:     '<strong>📉 NIM Compression</strong><br>Net Interest Margin (NIMY). Below 3.2% narrows profitability cushion for community banks.',
+      cdconc:  '<strong>⏱ CD Concentration</strong><br>Time deposits as % of total deposits. High concentration = periodic repricing cliff risk.',
+      capital: '<strong>🏦 Capital Adequacy</strong><br>Equity/Assets ratio. Below 10% = thinner buffer for absorbing loan losses.',
+    };
+
+    var SCORE_TIP = 'Composite pressure score 0–100.<br><span style="color:#16a34a">■</span> 0–19 Low &nbsp; <span style="color:#d97706">■</span> 20–44 Moderate<br><span style="color:#c2410c">■</span> 45–69 High &nbsp; <span style="color:#dc2626">■</span> 70+ Intense';
+    var ZONE_TIPS = {
+      low:  'Low Pressure (0–19): Funding fundamentals are healthy. Core deposits are strong and cost of funds is below peer.',
+      mod:  'Moderate Pressure (20–44): One or more metrics trending toward stress. Active monitoring recommended.',
+      high: 'High Pressure (45–69): Multiple drivers elevated. Funding mix is imbalanced and action is warranted.',
+      crit: 'Intense Pressure (70–100): Severe multi-dimensional funding stress. Immediate review recommended.',
+    };
+
+    const iconStrip = function(activeIds) {
+      return Object.keys(DRIVER_ICONS).map(function(id) {
+        var active = activeIds.includes(id);
+        var tip = active ? DRIVER_TIPS[id] : (DRIVER_ICONS[id].label + ' — not flagged');
+        return '<span class="' + (active ? '' : 'driver-icon-inactive') +
+          '" onmouseenter="showTip(this,\'' + tip.replace(/'/g,"\\'") + '\')" onmouseleave="hideTip()" style="cursor:default">' +
+          DRIVER_ICONS[id].icon + '</span>';
+      }).join(' ');
+    };
+
+    document.getElementById('scannerBody').innerHTML = sorted.map(function(r) {
+      var safeName = r.inst.NAME.replace(/'/g, "\\'");
+      var inQ = compareQueue.some(function(b){ return b.cert === r.inst.CERT; });
+      var zoneTip = (ZONE_TIPS[r.zone.key] || r.zone.label).replace(/'/g,"\\'");
+      return '<tr>' +
+        '<td><strong>' + r.inst.NAME + '</strong></td>' +
+        '<td>' + r.inst.STALP + '</td>' +
+        '<td>' + fmtM(r.inst.ASSET) + '</td>' +
+        '<td><strong style="font-size:15px;color:' + r.zone.color + '">' + r.score + '</strong></td>' +
+        '<td><span onmouseenter="showTip(this,\'' + zoneTip + '\')" onmouseleave="hideTip()" style="cursor:default">' + r.zone.label + '</span></td>' +
+        '<td>' + r.activeDriverIds.length + ' driver' + (r.activeDriverIds.length !== 1 ? 's' : '') + '</td>' +
+        '<td class="driver-icons">' + iconStrip(r.activeDriverIds) + '</td>' +
+        '<td style="display:flex;gap:6px;flex-wrap:wrap">' +
+          '<button class="btn-view-report" onclick="viewReportFromScanner(' + r.inst.CERT + ', \'' + safeName + '\')">View Report</button>' +
+          '<button class="btn-compare ' + (inQ ? 'in-compare' : '') + '" data-compare-cert="' + r.inst.CERT + '" onclick="toggleCompare(' + r.inst.CERT + ', \'' + safeName + '\')">' + (inQ ? '✓ Added' : '+ Compare') + '</button>' +
+        '</td>' +
+        '</tr>';
+    }).join('');
+  }
+
+  async function viewReportFromScanner(cert, name) {
+    document.getElementById('searchInput').value = name;
+    closeAcDropdown();
+    await loadBank(cert, name);
+    setTimeout(function() {
+      var report = document.getElementById('reportOutput');
+      if (report) report.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 200);
+  }
+  </script>
+
+  </div><!-- /#diq-root -->
+
+</body>
+</html>
