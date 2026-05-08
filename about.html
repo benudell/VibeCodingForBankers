@@ -477,11 +477,10 @@
     </div>
 
     <!-- Email Capture -->
-    <!-- TO SET UP: Replace YOUR_FORM_ID with your Formspree/Google Script endpoint (same as homepage) -->
     <div class="email-section">
       <h2>Stay in the loop</h2>
       <p>Get notified when new tools and examples drop. No spam — just new builds worth your time.</p>
-      <form class="email-form" id="emailForm" action="https://formspree.io/f/YOUR_FORM_ID" method="POST">
+      <form class="email-form" id="emailForm">
         <input class="email-input" type="email" name="email" placeholder="your@bank.com" required>
         <button class="email-btn" type="submit">Notify Me</button>
       </form>
@@ -508,9 +507,14 @@
   </footer>
 
   <script>
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw_fB1WUMu78fRrLVEBPa9GOAY6Ng2Lzy8RIN1iD5fTNvYi4U49Or56YtWM7o_eEZM/exec';
     const form = document.getElementById('emailForm');
     form.addEventListener('submit', function(e) {
-      if (form.action.includes('YOUR_FORM_ID')) { e.preventDefault(); }
+      e.preventDefault();
+      const email = form.querySelector('input[type="email"]').value;
+      const data = new URLSearchParams();
+      data.append('email', email);
+      fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: data });
       form.style.display = 'none';
       document.getElementById('emailThanks').style.display = 'block';
     });
