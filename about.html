@@ -183,6 +183,78 @@
     }
     .contact-value a:hover { color: var(--gold); border-color: var(--gold); }
 
+    /* ── Email Capture ──────────────────────────────────── */
+    .email-section {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 40px 48px;
+      margin-bottom: 32px;
+      text-align: center;
+      box-shadow: var(--shadow);
+    }
+    @media (max-width: 600px) { .email-section { padding: 28px 20px; } }
+    .email-section h2 {
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: var(--navy);
+      margin-bottom: 8px;
+      letter-spacing: -0.3px;
+    }
+    .email-section p {
+      font-size: 14px;
+      color: var(--text-mid);
+      margin-bottom: 24px;
+      max-width: 420px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .email-form {
+      display: flex;
+      gap: 10px;
+      max-width: 440px;
+      margin: 0 auto;
+    }
+    @media (max-width: 500px) { .email-form { flex-direction: column; } }
+    .email-input {
+      flex: 1;
+      padding: 11px 16px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: 'Inter', sans-serif;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .email-input:focus { border-color: var(--navy); }
+    .email-btn {
+      background: var(--navy);
+      color: #fff;
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      padding: 11px 22px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.2s, transform 0.15s;
+    }
+    .email-btn:hover { background: var(--navy-mid); transform: translateY(-1px); }
+    .email-thanks {
+      display: none;
+      color: #16a34a;
+      font-weight: 600;
+      font-size: 14px;
+      margin-top: 12px;
+    }
+    .email-note {
+      font-size: 12px;
+      color: var(--text-light);
+      margin-top: 12px;
+    }
+
     /* ── benudell.ai CTA ────────────────────────────────── */
     .cta-block {
       background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 100%);
@@ -296,6 +368,19 @@
       <p>Interested in consulting, speaking, or just want to follow the work? Everything lives at <strong>benudell.ai</strong>.</p>
     </div>
 
+    <!-- Email Capture -->
+    <!-- TO SET UP: Replace YOUR_FORM_ID with your Formspree/Google Script endpoint (same as homepage) -->
+    <div class="email-section">
+      <h2>Stay in the loop</h2>
+      <p>Get notified when new tools and examples drop. No spam — just new builds worth your time.</p>
+      <form class="email-form" id="emailForm" action="https://formspree.io/f/YOUR_FORM_ID" method="POST">
+        <input class="email-input" type="email" name="email" placeholder="your@bank.com" required>
+        <button class="email-btn" type="submit">Notify Me</button>
+      </form>
+      <div class="email-thanks" id="emailThanks">✓ You're on the list — thanks!</div>
+      <div class="email-note">No spam. Unsubscribe anytime.</div>
+    </div>
+
     <!-- benudell.ai CTA -->
     <div class="cta-block">
       <div class="cta-eyebrow">AI Strategy &amp; Consulting for Banks</div>
@@ -313,6 +398,15 @@
   <footer class="site-footer">
     <p>Vibe Coding for Bankers &nbsp;·&nbsp; Built by <a href="https://benudell.ai" target="_blank" rel="noopener">Ben Udell</a> &nbsp;·&nbsp; <a href="index.html">Home</a></p>
   </footer>
+
+  <script>
+    const form = document.getElementById('emailForm');
+    form.addEventListener('submit', function(e) {
+      if (form.action.includes('YOUR_FORM_ID')) { e.preventDefault(); }
+      form.style.display = 'none';
+      document.getElementById('emailThanks').style.display = 'block';
+    });
+  </script>
 
 </body>
 </html>
