@@ -283,15 +283,25 @@
       margin-right: auto;
     }
     .email-form {
-      display: flex;
-      gap: 10px;
-      max-width: 440px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      max-width: 540px;
       margin: 0 auto;
+      text-align: left;
     }
-    @media (max-width: 500px) { .email-form { flex-direction: column; } }
+    .email-form .full { grid-column: 1 / -1; }
+    @media (max-width: 500px) { .email-form { grid-template-columns: 1fr; } }
+    .email-field { display: flex; flex-direction: column; gap: 5px; }
+    .email-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-mid);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+    }
     .email-input {
-      flex: 1;
-      padding: 11px 16px;
+      padding: 11px 14px;
       border: 1.5px solid var(--border);
       border-radius: 8px;
       font-size: 14px;
@@ -299,19 +309,20 @@
       color: var(--text);
       outline: none;
       transition: border-color 0.2s;
+      width: 100%;
     }
     .email-input:focus { border-color: var(--navy); }
     .email-btn {
+      grid-column: 1 / -1;
       background: var(--navy);
       color: #fff;
       font-family: 'Inter', sans-serif;
       font-size: 14px;
       font-weight: 600;
-      padding: 11px 22px;
+      padding: 13px 22px;
       border: none;
       border-radius: 8px;
       cursor: pointer;
-      white-space: nowrap;
       transition: background 0.2s, transform 0.15s;
     }
     .email-btn:hover { background: var(--navy-mid); transform: translateY(-1px); }
@@ -319,13 +330,14 @@
       display: none;
       color: #16a34a;
       font-weight: 600;
-      font-size: 14px;
-      margin-top: 12px;
+      font-size: 15px;
+      margin-top: 16px;
     }
     .email-note {
       font-size: 12px;
       color: var(--text-light);
       margin-top: 12px;
+      text-align: center;
     }
 
     /* ── benudell.ai CTA ────────────────────────────────── */
@@ -481,7 +493,26 @@
       <h2>Stay in the loop</h2>
       <p>Get notified when new tools and examples drop, when I publish new articles, or have great insights on GenAI to share. No spam — just new builds and insights worth your time.</p>
       <form class="email-form" id="emailForm">
-        <input class="email-input" type="email" name="email" placeholder="your@bank.com" required>
+        <div class="email-field">
+          <label class="email-label" for="firstName">First Name</label>
+          <input class="email-input" type="text" id="firstName" name="firstName" placeholder="Jane" required>
+        </div>
+        <div class="email-field">
+          <label class="email-label" for="lastName">Last Name</label>
+          <input class="email-input" type="text" id="lastName" name="lastName" placeholder="Smith" required>
+        </div>
+        <div class="email-field full">
+          <label class="email-label" for="organization">Organization</label>
+          <input class="email-input" type="text" id="organization" name="organization" placeholder="First National Bank" required>
+        </div>
+        <div class="email-field full">
+          <label class="email-label" for="title">Title</label>
+          <input class="email-input" type="text" id="title" name="title" placeholder="Chief Digital Officer" required>
+        </div>
+        <div class="email-field full">
+          <label class="email-label" for="email">Email</label>
+          <input class="email-input" type="email" id="email" name="email" placeholder="jane@firstnational.com" required>
+        </div>
         <button class="email-btn" type="submit">Notify Me</button>
       </form>
       <div class="email-thanks" id="emailThanks">✓ You're on the list — thanks!</div>
@@ -511,9 +542,12 @@
     const form = document.getElementById('emailForm');
     form.addEventListener('submit', function(e) {
       e.preventDefault();
-      const email = form.querySelector('input[type="email"]').value;
       const data = new URLSearchParams();
-      data.append('email', email);
+      data.append('firstName',    form.querySelector('[name="firstName"]').value);
+      data.append('lastName',     form.querySelector('[name="lastName"]').value);
+      data.append('organization', form.querySelector('[name="organization"]').value);
+      data.append('title',        form.querySelector('[name="title"]').value);
+      data.append('email',        form.querySelector('[name="email"]').value);
       fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: data });
       form.style.display = 'none';
       document.getElementById('emailThanks').style.display = 'block';
