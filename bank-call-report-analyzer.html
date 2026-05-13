@@ -2006,7 +2006,7 @@
     try {
       var url = 'https://api.fdic.gov/banks/institutions?filters=' +
         encodeURIComponent('ACTIVE:1 AND NAME:*' + q + '*') +
-        '&fields=NAME,CERT,STALP,CITY,ASSET&limit=10&sort_by=ASSET&sort_order=DESC';
+        '&fields=NAME,CERT,STALP,CITY,ASSET&limit=50&sort_by=NAME&sort_order=ASC';
       var res  = await fetch(url);
       var json = await res.json();
       cmpAcResults = (json.data || []).map(function(d){ return d.data; });
@@ -2058,7 +2058,7 @@
     try {
       var url = 'https://api.fdic.gov/banks/institutions?filters=' +
         encodeURIComponent('ACTIVE:1 AND NAME:*' + q + '*') +
-        '&fields=NAME,CERT,STALP,CITY,ASSET&limit=10&sort_by=ASSET&sort_order=DESC';
+        '&fields=NAME,CERT,STALP,CITY,ASSET&limit=50&sort_by=NAME&sort_order=ASC';
       var res  = await fetch(url);
       var json = await res.json();
       apiAcResults = (json.data || []).map(function(d){ return d.data; });
@@ -2232,7 +2232,7 @@
       // Wildcard NAME filter is most reliable for autocomplete partial matching
       var encoded = encodeURIComponent('ACTIVE:1 AND NAME:*' + q + '*');
       var url = 'https://api.fdic.gov/banks/institutions?filters=' + encoded +
-        '&fields=NAME,CERT,STALP,CITY,ASSET&limit=10&sort_by=ASSET&sort_order=DESC';
+        '&fields=NAME,CERT,STALP,CITY,ASSET&limit=50&sort_by=NAME&sort_order=ASC';
       var res  = await fetch(url);
       var json = await res.json();
       acResults = (json.data || []).map(function(d){ return d.data; });
