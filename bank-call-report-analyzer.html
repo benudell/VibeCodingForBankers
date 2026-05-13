@@ -639,8 +639,6 @@
       min-height: 20px;
     }
 
-    .scanner-table-wrap { overflow-x: auto; }
-
     .scanner-table {
       width: 100%;
       border-collapse: collapse;
@@ -663,6 +661,87 @@
     }
     .sortable-th:hover { background: var(--navy-light); }
     .sort-ind { color: var(--gold); font-size: 10px; margin-left: 3px; }
+    .sort-ind-idle { color: rgba(255,255,255,0.25); font-size: 10px; margin-left: 3px; }
+
+    /* ════════════════════════════════════════════════════════════
+       TOAST NOTIFICATIONS
+    ════════════════════════════════════════════════════════════ */
+    #toastContainer {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      pointer-events: none;
+    }
+    .toast {
+      background: var(--navy);
+      color: #fff;
+      border-radius: 10px;
+      padding: 12px 18px;
+      font-size: 14px;
+      font-weight: 500;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+      opacity: 0;
+      transform: translateY(12px);
+      animation: toastIn 0.25s ease forwards, toastOut 0.3s ease 2.8s forwards;
+      max-width: 340px;
+      pointer-events: auto;
+    }
+    .toast.toast-warn  { background: var(--amber);  color: var(--navy); }
+    .toast.toast-error { background: var(--red); }
+    .toast.toast-success { background: var(--green); }
+    @keyframes toastIn  { to   { opacity: 1; transform: translateY(0); } }
+    @keyframes toastOut { from { opacity: 1; } to { opacity: 0; } }
+
+    /* ════════════════════════════════════════════════════════════
+       AUTOCOMPLETE KEYBOARD HIGHLIGHT + TYPE-MORE HINT
+    ════════════════════════════════════════════════════════════ */
+    .ac-item.ac-active { background: #eef2ff !important; }
+    .ac-hint {
+      padding: 8px 16px;
+      font-size: 12px;
+      color: var(--text-light);
+      background: #f9fafb;
+      border-top: 1px solid var(--border);
+      text-align: center;
+      font-style: italic;
+    }
+
+    /* ════════════════════════════════════════════════════════════
+       SCANNER ENHANCEMENTS
+    ════════════════════════════════════════════════════════════ */
+    .scanner-table-wrap {
+      overflow-x: auto;
+      position: relative;
+    }
+    /* Scroll-fade hint on narrow screens */
+    @media (max-width: 900px) {
+      .scanner-table-wrap { mask-image: linear-gradient(to right, #000 85%, transparent 100%); }
+    }
+    .scanner-empty-state {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--text-light);
+      font-size: 14px;
+      line-height: 2;
+    }
+    .btn-scan-reset {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 18px;
+      font-family: Arial, sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      color: var(--text-mid);
+      transition: border-color 0.2s, color 0.2s;
+      align-self: flex-end;
+    }
+    .btn-scan-reset:hover { border-color: var(--navy); color: var(--navy); }
     .scanner-table td {
       padding: 10px 14px;
       border-bottom: 1px solid var(--border);
@@ -912,13 +991,15 @@
     .btn-compare.in-compare { background: var(--gold); color: var(--navy); }
     .btn-clear-compare {
       background: none;
-      border: 1px solid var(--border);
-      border-radius: 6px;
+      border: none;
+      border-left: 1px solid var(--border);
       padding: 8px 14px;
       font-size: 13px;
       cursor: pointer;
-      color: var(--text-mid);
+      color: var(--text-light);
+      transition: color 0.15s;
     }
+    .btn-clear-compare:hover { color: var(--red); }
     .compare-queue-bar {
       background: #f3f4f6;
       border: 1px solid var(--border);
@@ -1141,6 +1222,7 @@
           <input type="number" id="filterMaxAsset" placeholder="e.g. 2000" style="width:120px">
         </div>
         <button class="btn-scan" onclick="runScanner()">Run Scanner</button>
+        <button class="btn-scan-reset" onclick="resetScannerFilters()">Reset</button>
       </div>
 
       <div class="scanner-status" id="scannerStatus"></div>
@@ -1148,12 +1230,12 @@
         <table class="scanner-table" id="scannerTable">
           <thead>
             <tr>
-              <th class="sortable-th" onclick="sortScanner('name')" id="th-name">Bank Name <span class="sort-ind"></span></th>
-              <th class="sortable-th" onclick="sortScanner('state')" id="th-state">State <span class="sort-ind"></span></th>
-              <th class="sortable-th" onclick="sortScanner('asset')" id="th-asset">Assets <span class="sort-ind"></span></th>
+              <th class="sortable-th" onclick="sortScanner('name')" id="th-name">Bank Name <span class="sort-ind"><span class="sort-ind-idle">⇕</span></span></th>
+              <th class="sortable-th" onclick="sortScanner('state')" id="th-state">State <span class="sort-ind"><span class="sort-ind-idle">⇕</span></span></th>
+              <th class="sortable-th" onclick="sortScanner('asset')" id="th-asset">Assets <span class="sort-ind"><span class="sort-ind-idle">⇕</span></span></th>
               <th class="sortable-th" onclick="sortScanner('score')" id="th-score">Score <span class="sort-ind">▼</span></th>
-              <th class="sortable-th" onclick="sortScanner('zone')" id="th-zone">Zone <span class="sort-ind"></span></th>
-              <th class="sortable-th" onclick="sortScanner('drivers')" id="th-drivers">Active Drivers <span class="sort-ind"></span></th>
+              <th class="sortable-th" onclick="sortScanner('zone')" id="th-zone">Zone <span class="sort-ind"><span class="sort-ind-idle">⇕</span></span></th>
+              <th class="sortable-th" onclick="sortScanner('drivers')" id="th-drivers">Active Drivers <span class="sort-ind"><span class="sort-ind-idle">⇕</span></span></th>
               <th>Driver Icons</th>
               <th>Action</th>
             </tr>
@@ -1316,7 +1398,8 @@
           <input class="bank-search-input" id="compareSearchInput"
             type="text" placeholder="Search for a bank to add…"
             autocomplete="off"
-            oninput="cmpSearchInput(this.value)">
+            oninput="cmpSearchInput(this.value)"
+            onkeydown="handleCmpSearchKey(event)">
           <div class="ac-dropdown" id="cmpAcDropdown"></div>
         </div>
         <div style="font-size:12px;color:var(--text-light);padding-top:14px"><span id="compareSlots">0</span> / 5 banks selected</div>
@@ -1326,8 +1409,8 @@
       <div id="compareQueueBar" style="display:none">
         <div class="compare-queue-bar">
           <div class="compare-queue-banks" id="compareQueueBanks"></div>
-          <div style="display:flex;gap:8px;align-items:center;flex-shrink:0">
-            <button class="btn-scan" onclick="runComparison()">Compare Now</button>
+          <div style="display:flex;align-items:center;flex-shrink:0;border:1px solid var(--border);border-radius:8px;overflow:hidden">
+            <button class="btn-scan" style="border-radius:0;border:none" onclick="runComparison()">Compare Now</button>
             <button class="btn-clear-compare" onclick="clearCompare()">Clear All</button>
           </div>
         </div>
@@ -1574,9 +1657,12 @@
     </div>
   </div><!-- /panel-education -->
 
+  <!-- Toast container -->
+  <div id="toastContainer"></div>
+
   <!-- ═══════════════════════════════════════════ MODAL -->
   <div class="driver-modal-overlay" id="driverModal" onclick="closeDriverModal(event)">
-    <div class="driver-modal">
+    <div class="driver-modal" onclick="event.stopPropagation()">
       <button class="modal-close" onclick="closeDriverModal(null, true)">✕</button>
       <div class="modal-severity-bar" id="modalSeverityBar"></div>
       <div class="modal-header">
@@ -1638,6 +1724,21 @@
   function hideTip() { if (_tip) _tip.style.opacity = '0'; }
 
   // ══════════════════════════════════════════════════════════
+  //  TOAST NOTIFICATIONS
+  // ══════════════════════════════════════════════════════════
+  function showToast(msg, type) {
+    var container = document.getElementById('toastContainer');
+    if (!container) return;
+    var toast = document.createElement('div');
+    toast.className = 'toast' + (type ? ' toast-' + type : '');
+    toast.textContent = msg;
+    container.appendChild(toast);
+    setTimeout(function() {
+      if (toast.parentNode) toast.parentNode.removeChild(toast);
+    }, 3200);
+  }
+
+  // ══════════════════════════════════════════════════════════
   //  COMPARE BANKS
   // ══════════════════════════════════════════════════════════
   var compareQueue = []; // [{cert, name}]
@@ -1648,7 +1749,7 @@
     if (idx >= 0) {
       compareQueue.splice(idx, 1);
     } else {
-      if (compareQueue.length >= 5) { alert('You can compare up to 5 banks at a time.'); return; }
+      if (compareQueue.length >= 5) { showToast('You can compare up to 5 banks at a time.', 'warn'); return; }
       compareQueue.push({ cert: cert, name: name });
     }
     updateCompareQueueUI();
@@ -1692,7 +1793,7 @@
   }
 
   async function runComparison() {
-    if (compareQueue.length < 2) { alert('Please add at least 2 banks to compare.'); return; }
+    if (compareQueue.length < 2) { showToast('Please add at least 2 banks to compare.', 'warn'); return; }
     document.getElementById('compareStatus').textContent = 'Fetching financial data…';
     document.getElementById('compareOutput').style.display = 'none';
     switchTab('compare');
@@ -1965,6 +2066,7 @@
   }
 
   function exportComparePDF() {
+    showToast('Preparing PDF…', null);
     document.body.classList.add('printing-compare');
     // Step 1: force each Chart.js instance to resize so canvas dimensions are correct
     Object.values(compareChartInstances).forEach(function(chart) {
@@ -1994,6 +2096,7 @@
   // ══════════════════════════════════════════════════════════
   var cmpAcTimer = null;
   var cmpAcResults = [];
+  var cmpAcIndex = -1;
 
   function cmpSearchInput(val) {
     clearTimeout(cmpAcTimer);
@@ -2012,25 +2115,51 @@
       cmpAcResults = (json.data || []).map(function(d){ return d.data; });
       var drop = document.getElementById('cmpAcDropdown');
       if (!cmpAcResults.length) { drop.style.display = 'none'; return; }
-      drop.innerHTML = cmpAcResults.map(function(b, i) {
+      var visible = cmpAcResults.slice(0, AC_VISIBLE_MAX);
+      drop.innerHTML = visible.map(function(b, i) {
         var inQ = compareQueue.some(function(x){ return x.cert === b.CERT; });
         var hl  = (b.NAME||'').replace(new RegExp('(' + q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + ')', 'gi'), '<strong>$1</strong>');
-        return '<div class="ac-item" onmousedown="cmpAddBank(' + i + ')" style="' + (inQ ? 'opacity:0.5;pointer-events:none' : '') + '">' +
+        return '<div class="ac-item" data-idx="' + i + '" onmousedown="cmpAddBank(' + i + ')" style="' + (inQ ? 'opacity:0.5;pointer-events:none' : '') + '">' +
           hl + '<small>' + (b.CITY||'') + ', ' + (b.STALP||'') + ' · ' + fmtM(b.ASSET) + (inQ ? ' · Already added' : '') + '</small></div>';
       }).join('');
+      if (cmpAcResults.length > AC_VISIBLE_MAX) {
+        drop.innerHTML += '<div class="ac-hint">Showing ' + AC_VISIBLE_MAX + ' of ' + cmpAcResults.length + ' — type more to narrow</div>';
+      }
       drop.style.display = 'block';
+      cmpAcIndex = -1;
     } catch(e) {}
+  }
+
+  function handleCmpSearchKey(event) {
+    var drop = document.getElementById('cmpAcDropdown');
+    var items = drop ? drop.querySelectorAll('.ac-item') : [];
+    if (event.key === 'ArrowDown') {
+      cmpAcIndex = Math.min(cmpAcIndex + 1, items.length - 1);
+      items.forEach(function(el, i) { el.classList.toggle('ac-active', i === cmpAcIndex); });
+      if (items[cmpAcIndex]) items[cmpAcIndex].scrollIntoView({ block: 'nearest' });
+      event.preventDefault();
+    } else if (event.key === 'ArrowUp') {
+      cmpAcIndex = Math.max(cmpAcIndex - 1, -1);
+      items.forEach(function(el, i) { el.classList.toggle('ac-active', i === cmpAcIndex); });
+      if (items[cmpAcIndex]) items[cmpAcIndex].scrollIntoView({ block: 'nearest' });
+      event.preventDefault();
+    } else if (event.key === 'Enter') {
+      if (cmpAcIndex >= 0 && cmpAcResults[cmpAcIndex]) cmpAddBank(cmpAcIndex);
+    } else if (event.key === 'Escape') {
+      drop.style.display = 'none'; drop.innerHTML = '';
+    }
   }
 
   function cmpAddBank(idx) {
     var bank = cmpAcResults[idx];
     if (!bank) return;
-    if (compareQueue.length >= 5) { alert('You can compare up to 5 banks.'); return; }
+    if (compareQueue.length >= 5) { showToast('You can compare up to 5 banks.', 'warn'); return; }
     if (compareQueue.some(function(b){ return b.cert === bank.CERT; })) return;
     compareQueue.push({ cert: bank.CERT, name: bank.NAME });
     document.getElementById('compareSearchInput').value = '';
     var drop = document.getElementById('cmpAcDropdown');
     drop.style.display = 'none'; drop.innerHTML = '';
+    cmpAcIndex = -1;
     updateCompareQueueUI();
   }
 
@@ -2240,12 +2369,14 @@
     } catch(e) { closeAcDropdown(); }
   }
 
+  var AC_VISIBLE_MAX = 8;
+
   function renderAcDropdown(q) {
     var dropdown = document.getElementById('acDropdown');
     if (!acResults.length) { closeAcDropdown(); return; }
 
-    var ql = q.toLowerCase();
-    dropdown.innerHTML = acResults.map(function(b, i) {
+    var visible = acResults.slice(0, AC_VISIBLE_MAX);
+    dropdown.innerHTML = visible.map(function(b, i) {
       var name = b.NAME || '';
       var highlighted = name.replace(new RegExp('(' + q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + ')', 'gi'),
         '<strong>$1</strong>');
@@ -2254,6 +2385,10 @@
         '<small>' + (b.CITY || '') + ', ' + (b.STALP || '') + ' · ' + fmtM(b.ASSET) + '</small>' +
         '</div>';
     }).join('');
+
+    if (acResults.length > AC_VISIBLE_MAX) {
+      dropdown.innerHTML += '<div class="ac-hint">Showing ' + AC_VISIBLE_MAX + ' of ' + acResults.length + ' — type more to narrow</div>';
+    }
 
     dropdown.style.display = 'block';
     acIndex = -1;
@@ -2279,11 +2414,13 @@
     var items = dropdown ? dropdown.querySelectorAll('.ac-item') : [];
     if (event.key === 'ArrowDown') {
       acIndex = Math.min(acIndex + 1, items.length - 1);
-      items.forEach(function(el, i) { el.style.background = i === acIndex ? '#f3f4f6' : ''; });
+      items.forEach(function(el, i) { el.classList.toggle('ac-active', i === acIndex); });
+      if (items[acIndex]) items[acIndex].scrollIntoView({ block: 'nearest' });
       event.preventDefault();
     } else if (event.key === 'ArrowUp') {
       acIndex = Math.max(acIndex - 1, -1);
-      items.forEach(function(el, i) { el.style.background = i === acIndex ? '#f3f4f6' : ''; });
+      items.forEach(function(el, i) { el.classList.toggle('ac-active', i === acIndex); });
+      if (items[acIndex]) items[acIndex].scrollIntoView({ block: 'nearest' });
       event.preventDefault();
     } else if (event.key === 'Enter') {
       if (acIndex >= 0 && acResults[acIndex]) {
@@ -2323,11 +2460,11 @@
       const fins = (finJson.data || []).map(d => d.data);
 
       document.getElementById('loadingIndicator').style.display = 'none';
-      if (!fins.length) { alert('No financial data found for this institution.'); return; }
+      if (!fins.length) { showToast('No financial data found for this institution.', 'warn'); return; }
       renderReport(cert, name, inst, fins);
     } catch(e) {
       document.getElementById('loadingIndicator').style.display = 'none';
-      alert('Error fetching FDIC data: ' + e.message);
+      showToast('Error fetching FDIC data: ' + e.message, 'error');
     }
   }
 
@@ -2911,6 +3048,7 @@
     document.body.classList.add('printing-report');
     var oldTitle = document.title;
     document.title = '';
+    showToast('Preparing PDF…', null);
     Object.values(chartInstances).forEach(c => { try { c.resize(); } catch(e){} });
     setTimeout(() => {
       prepareChartsForPrint();
@@ -2994,6 +3132,12 @@
     const minAsset = parseInt(document.getElementById('filterMinAsset').value) || 0;
     const maxAsset = parseInt(document.getElementById('filterMaxAsset').value) || 999999999;
 
+    // Validate asset range
+    if (minAsset && maxAsset < 999999999 && minAsset > maxAsset) {
+      showToast('Min Assets cannot be greater than Max Assets.', 'warn');
+      return;
+    }
+
     // Reset sort to score desc on each new scan
     scannerSortCol = 'score';
     scannerSortDir = 'desc';
@@ -3054,6 +3198,16 @@
     applyScannerSort();
   }
 
+  function resetScannerFilters() {
+    document.getElementById('filterZone').value    = '';
+    document.getElementById('filterState').value   = '';
+    document.getElementById('filterMinAsset').value = '';
+    document.getElementById('filterMaxAsset').value = '';
+    document.getElementById('scannerStatus').textContent = '';
+    document.getElementById('scannerBody').innerHTML = '';
+    scannerRows = [];
+  }
+
   function sortScanner(col) {
     if (scannerSortCol === col) {
       scannerSortDir = scannerSortDir === 'desc' ? 'asc' : 'desc';
@@ -3065,7 +3219,14 @@
   }
 
   function applyScannerSort() {
-    if (!scannerRows.length) return;
+    if (!scannerRows.length) {
+      document.getElementById('scannerBody').innerHTML =
+        '<tr><td colspan="8"><div class="scanner-empty-state">' +
+        '🔍<br>No results match your filters.<br>Try adjusting the Pressure Zone, State, or asset range.' +
+        '</div></td></tr>';
+      document.getElementById('scannerStatus').textContent = '';
+      return;
+    }
 
     var sorted = scannerRows.slice().sort(function(a, b) {
       var v;
@@ -3089,9 +3250,9 @@
       var ind = el.querySelector('.sort-ind');
       if (!ind) return;
       if (c === scannerSortCol) {
-        ind.textContent = scannerSortDir === 'desc' ? '▼' : '▲';
+        ind.innerHTML = scannerSortDir === 'desc' ? '▼' : '▲';
       } else {
-        ind.textContent = '';
+        ind.innerHTML = '<span class="sort-ind-idle">⇕</span>';
       }
     });
 
