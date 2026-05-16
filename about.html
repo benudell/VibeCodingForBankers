@@ -85,6 +85,50 @@
     }
     .header-nav a:hover, .header-nav a.active { color: var(--navy); }
 
+    /* ── Hamburger ──────────────────────────────────────── */
+    .hamburger {
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      gap: 5px;
+      width: 36px;
+      height: 36px;
+      cursor: pointer;
+      background: none;
+      border: none;
+      padding: 4px;
+    }
+    .hamburger span {
+      display: block;
+      height: 2px;
+      background: var(--navy);
+      border-radius: 2px;
+      transition: transform 0.25s, opacity 0.25s;
+    }
+    .hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    .hamburger.open span:nth-child(2) { opacity: 0; }
+    .hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+    @media (max-width: 600px) {
+      .site-header { padding: 14px 20px; position: relative; }
+      .hamburger { display: flex; }
+      .header-nav {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0; right: 0;
+        background: var(--white);
+        border-top: 1px solid var(--border);
+        border-bottom: 1px solid var(--border);
+        padding: 12px 20px 16px;
+        z-index: 200;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      }
+      .header-nav.open { display: flex; flex-direction: column; }
+      .header-nav a { margin-left: 0; padding: 10px 0; font-size: 15px; border-bottom: 1px solid var(--border); }
+      .header-nav a:last-child { border-bottom: none; }
+    }
+
     /* ── Page Hero ──────────────────────────────────────── */
     .page-hero {
       background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 100%);
@@ -432,7 +476,10 @@
       <div class="brand-name">Vibe Coding <span>for Bankers</span></div>
       <div class="brand-tagline">AI-built tools for financial services</div>
     </a>
-    <nav class="header-nav">
+    <button class="hamburger" id="hamburger" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+    <nav class="header-nav" id="headerNav">
       <a href="index.html">Home</a>
       <a href="about.html" class="active">About</a>
       <a href="https://benudell.ai" target="_blank" rel="noopener">benudell.ai</a>
@@ -538,6 +585,18 @@
   </footer>
 
   <script>
+    // Hamburger menu
+    const hamburger = document.getElementById('hamburger');
+    const headerNav = document.getElementById('headerNav');
+    hamburger.addEventListener('click', () => {
+      hamburger.classList.toggle('open');
+      headerNav.classList.toggle('open');
+    });
+    headerNav.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
+      hamburger.classList.remove('open');
+      headerNav.classList.remove('open');
+    }));
+
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw_fB1WUMu78fRrLVEBPa9GOAY6Ng2Lzy8RIN1iD5fTNvYi4U49Or56YtWM7o_eEZM/exec';
     const form = document.getElementById('emailForm');
     form.addEventListener('submit', function(e) {
