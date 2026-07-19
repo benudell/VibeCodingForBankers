@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-VMK59B5GK4"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-VMK59B5GK4');
+  </script>
+
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy — Vibe Coding for Bankers</title>
+  <meta name="description" content="Privacy policy for vibecodingforbankers.com — what data is collected, how it is used, and how to request its removal.">
+  <link rel="canonical" href="https://vibecodingforbankers.com/privacy.html">
+  <link rel="icon" type="image/png" href="robot.png">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Vibe Coding for Bankers">
+  <meta property="og:title" content="Privacy Policy — Vibe Coding for Bankers">
+  <meta property="og:description" content="What data vibecodingforbankers.com collects, how it is used, and how to request its removal.">
+  <meta property="og:url" content="https://vibecodingforbankers.com/privacy.html">
+  <meta property="og:image" content="https://vibecodingforbankers.com/robot.png">
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:       #0a1628;
+      --navy-mid:   #1e3a5f;
+      --gold:       #c9a84c;
+      --gold-light: #f5e9c8;
+      --bg:         #f1f5f9;
+      --white:      #ffffff;
+      --text:       #0f172a;
+      --text-mid:   #475569;
+      --text-light: #94a3b8;
+      --border:     #e2e8f0;
+      --shadow:     0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.06);
+    }
+
+    html, body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    /* ── Top Banner ─────────────────────────────────────── */
+    .top-banner {
+      background: var(--navy);
+      color: #fff;
+      text-align: center;
+      padding: 10px 20px;
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.2px;
+    }
+    .top-banner a {
+      color: var(--gold);
+      text-decoration: none;
+      font-weight: 600;
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.2s;
+    }
+    .top-banner a:hover { border-color: var(--gold); }
+
+    /* ── Header ─────────────────────────────────────────── */
+    .site-header {
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      padding: 20px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+    .brand { display: flex; flex-direction: column; gap: 2px; text-decoration: none; }
+    .brand-name {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--navy);
+      letter-spacing: -0.5px;
+    }
+    .brand-name span { color: var(--gold); }
+    .brand-tagline {
+      font-size: 12px;
+      color: var(--text-light);
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      font-weight: 500;
+    }
+    .header-nav a {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-mid);
+      text-decoration: none;
+      margin-left: 24px;
+      transition: color 0.2s;
+    }
+    .header-nav a:hover, .header-nav a.active { color: var(--navy); }
+
+    /* ── Hamburger ──────────────────────────────────────── */
+    .hamburger {
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      gap: 5px;
+      width: 36px;
+      height: 36px;
+      cursor: pointer;
+      background: none;
+      border: none;
+      padding: 4px;
+    }
+    .hamburger span {
+      display: block;
+      height: 2px;
+      background: var(--navy);
+      border-radius: 2px;
+      transition: transform 0.25s, opacity 0.25s;
+    }
+    .hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    .hamburger.open span:nth-child(2) { opacity: 0; }
+    .hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+    @media (max-width: 600px) {
+      .site-header { padding: 14px 20px; position: relative; }
+      .hamburger { display: flex; }
+      .header-nav {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0; right: 0;
+        background: var(--white);
+        border-top: 1px solid var(--border);
+        border-bottom: 1px solid var(--border);
+        padding: 12px 20px 16px;
+        z-index: 200;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      }
+      .header-nav.open { display: flex; flex-direction: column; }
+      .header-nav a { margin-left: 0; padding: 10px 0; font-size: 15px; border-bottom: 1px solid var(--border); }
+      .header-nav a:last-child { border-bottom: none; }
+    }
+
+    /* ── Page Hero ──────────────────────────────────────── */
+    .page-hero {
+      background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 100%);
+      padding: 56px 40px;
+      text-align: center;
+    }
+    .page-hero h1 {
+      font-size: 2.2rem;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -0.5px;
+      margin-bottom: 12px;
+    }
+    .page-hero p {
+      font-size: 1rem;
+      color: rgba(255,255,255,0.65);
+      max-width: 460px;
+      margin: 0 auto;
+      line-height: 1.7;
+    }
+
+    /* ── Main ───────────────────────────────────────────── */
+    .main { max-width: 760px; margin: 0 auto; padding: 56px 32px; }
+
+    .policy-card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 40px 44px;
+      box-shadow: var(--shadow);
+      margin-bottom: 32px;
+    }
+    @media (max-width: 600px) { .policy-card { padding: 26px 20px; } }
+
+    .updated {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-light);
+      margin-bottom: 28px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .policy-card h2 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--navy);
+      margin: 32px 0 10px;
+      letter-spacing: -0.2px;
+    }
+    .policy-card h2:first-of-type { margin-top: 0; }
+
+    .policy-card p {
+      font-size: 14.5px;
+      color: var(--text-mid);
+      line-height: 1.75;
+      margin-bottom: 14px;
+    }
+    .policy-card ul {
+      margin: 0 0 16px 20px;
+      color: var(--text-mid);
+      font-size: 14.5px;
+      line-height: 1.75;
+    }
+    .policy-card li { margin-bottom: 7px; }
+    .policy-card strong { color: var(--text); font-weight: 600; }
+    .policy-card a {
+      color: var(--navy);
+      font-weight: 600;
+      text-decoration: none;
+      border-bottom: 1px solid var(--border);
+      transition: color 0.2s, border-color 0.2s;
+    }
+    .policy-card a:hover { color: var(--gold); border-color: var(--gold); }
+
+    .highlight-box {
+      background: var(--bg);
+      border-left: 3px solid var(--gold);
+      border-radius: 6px;
+      padding: 16px 20px;
+      margin: 20px 0;
+    }
+    .highlight-box p { margin-bottom: 0; font-size: 14px; }
+
+    /* ── Footer ─────────────────────────────────────────── */
+    .site-footer {
+      background: var(--navy);
+      color: rgba(255,255,255,0.5);
+      text-align: center;
+      padding: 28px 20px;
+      font-size: 13px;
+    }
+    .site-footer a { color: var(--gold); text-decoration: none; }
+    .site-footer a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+  <!-- Top Banner -->
+  <div class="top-banner">
+    Part of <a href="https://benudell.ai" target="_blank" rel="noopener">benudell.ai</a> — AI consulting &amp; strategy for financial institutions
+  </div>
+
+  <!-- Header -->
+  <header class="site-header">
+    <a href="index.html" class="brand">
+      <div class="brand-name">Vibe Coding <span>for Bankers</span></div>
+      <div class="brand-tagline">AI-built tools for financial services</div>
+    </a>
+    <button class="hamburger" id="hamburger" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+    <nav class="header-nav" id="headerNav">
+      <a href="index.html">Home</a>
+      <a href="about.html">About</a>
+      <a href="https://benudell.ai" target="_blank" rel="noopener">benudell.ai</a>
+    </nav>
+  </header>
+
+  <!-- Page Hero -->
+  <section class="page-hero">
+    <h1>Privacy Policy</h1>
+    <p>What this site collects, why, and how to have it removed.</p>
+  </section>
+
+  <main class="main">
+    <div class="policy-card">
+
+      <div class="updated">Last updated: May 16, 2026</div>
+
+      <p>Vibe Coding for Bankers is a personal project operated by Ben Udell. It exists to share software built with AI and to help bankers learn to build their own. This policy explains what data the site collects and how it is handled.</p>
+
+      <div class="highlight-box">
+        <p><strong>The short version:</strong> This site collects anonymous usage analytics, plus whatever you voluntarily type into the newsletter form. Nothing is sold, rented, or shared with advertisers. Email me at <a href="mailto:ben@udellconsulting.com">ben@udellconsulting.com</a> and I will delete your information.</p>
+      </div>
+
+      <h2>Information collected automatically</h2>
+      <p>This site uses <strong>Google Analytics 4</strong> to understand how visitors use the site. Google Analytics sets cookies and collects standard web analytics data, including:</p>
+      <ul>
+        <li>Pages visited and time spent on them</li>
+        <li>Approximate geographic location (city or region level, derived from IP address)</li>
+        <li>Device type, browser, and operating system</li>
+        <li>How you arrived at the site (search engine, direct link, referral)</li>
+      </ul>
+      <p>This data is aggregated and is not used to identify individual visitors. Google's handling of this data is governed by the <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google Privacy Policy</a>. You can opt out entirely using the <a href="https://tools.google.com/dlpage/gaoptout" target="_blank" rel="noopener">Google Analytics Opt-out Browser Add-on</a>, or by using any standard ad or tracking blocker.</p>
+
+      <h2>Information you provide</h2>
+      <p>The newsletter signup form is the only place this site asks for personal information. If you choose to submit it, the form collects your <strong>first name, last name, organization, job title, and email address</strong>.</p>
+      <p>That information is stored in a private Google Sheet and used for one purpose: to send you occasional updates about new tools, articles, and AI insights — roughly once or twice a month. Submitting the form is entirely optional, and every tool on this site works without it.</p>
+
+      <h2>What is never done with your data</h2>
+      <ul>
+        <li>It is never sold, rented, or traded</li>
+        <li>It is never shared with advertisers or data brokers</li>
+        <li>It is never used for automated decision-making or profiling</li>
+        <li>No payment information is collected anywhere on this site</li>
+      </ul>
+
+      <h2>Third-party tools and links</h2>
+      <p>Many of the projects listed on this site are hosted on external platforms such as Lovable, Netlify, and Railway. When you click through to one of those tools, you leave this site and are subject to that platform's own privacy practices. Those tools are provided free as demonstrations, and any data you enter into them is governed by the host platform, not by this policy.</p>
+      <p>This site is hosted on <strong>GitHub Pages</strong>, which may collect standard server log data such as IP addresses as described in <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement" target="_blank" rel="noopener">GitHub's privacy statement</a>.</p>
+
+      <h2>Cookies</h2>
+      <p>The only cookies set by this site are those used by Google Analytics for the purposes described above. There are no advertising cookies, retargeting pixels, or third-party trackers. Blocking cookies in your browser will not prevent you from using anything on this site.</p>
+
+      <h2>Your choices</h2>
+      <p>You can unsubscribe from the newsletter at any time using the link in any email, or by replying to it. To see what information is held about you, correct it, or have it permanently deleted, email <a href="mailto:ben@udellconsulting.com">ben@udellconsulting.com</a>. Requests are handled personally and promptly — there is no ticketing system to navigate.</p>
+
+      <h2>Children</h2>
+      <p>This site is intended for banking and financial services professionals. It is not directed at children under 13, and no information is knowingly collected from them.</p>
+
+      <h2>Changes to this policy</h2>
+      <p>If this policy changes, the revised version will be posted here with an updated date at the top. Material changes affecting how your information is used will also be noted to newsletter subscribers.</p>
+
+      <h2>Contact</h2>
+      <p>Questions about this policy, or about anything on this site, can go directly to <a href="mailto:ben@udellconsulting.com">ben@udellconsulting.com</a>.</p>
+
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <p>Vibe Coding for Bankers &nbsp;·&nbsp; Built by <a href="https://benudell.ai" target="_blank" rel="noopener">Ben Udell</a> &nbsp;·&nbsp; <a href="index.html">Home</a> &nbsp;·&nbsp; <a href="privacy.html">Privacy</a></p>
+  </footer>
+
+  <script>
+    const hamburger = document.getElementById('hamburger');
+    const headerNav = document.getElementById('headerNav');
+    hamburger.addEventListener('click', () => {
+      hamburger.classList.toggle('open');
+      headerNav.classList.toggle('open');
+    });
+    headerNav.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
+      hamburger.classList.remove('open');
+      headerNav.classList.remove('open');
+    }));
+  </script>
+
+</body>
+</html>
