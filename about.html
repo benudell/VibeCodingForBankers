@@ -49,12 +49,21 @@
       --shadow-hover: 0 4px 12px rgba(0,0,0,0.12), 0 12px 32px rgba(0,0,0,0.1);
     }
 
+    html { scroll-behavior: smooth; }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
     html, body {
       font-family: 'Inter', sans-serif;
       background: var(--bg);
       color: var(--text);
       font-size: 15px;
       line-height: 1.6;
+    }
+
+    a:focus-visible, button:focus-visible {
+      outline: 2px solid var(--gold);
+      outline-offset: 2px;
+      border-radius: 4px;
     }
 
     /* ── Top Banner ─────────────────────────────────────── */
@@ -201,6 +210,48 @@
     }
     .bio-card p:last-child { margin-bottom: 0; }
     .bio-card strong { color: var(--text); font-weight: 600; }
+
+    /* ── What I Do ──────────────────────────────────────── */
+    .whatido {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+    @media (max-width: 600px) { .whatido { grid-template-columns: 1fr; } }
+    .whatido-tile {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 22px;
+      box-shadow: var(--shadow);
+    }
+    .whatido-ico {
+      width: 44px;
+      height: 44px;
+      border-radius: 11px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      line-height: 1;
+      margin-bottom: 12px;
+      box-shadow: inset 0 0 0 1px rgba(15,23,42,0.04);
+    }
+    .tint-teal   { background: #e0f1ee; }
+    .tint-amber  { background: #f6efda; }
+    .tint-violet { background: #ece7f6; }
+    .whatido-tile h3 {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--navy);
+      margin-bottom: 5px;
+    }
+    .whatido-tile p {
+      font-size: 13px;
+      color: var(--text-mid);
+      line-height: 1.6;
+    }
 
     /* ── Contact Card ───────────────────────────────────── */
     .contact-card {
@@ -507,6 +558,7 @@
     </button>
     <nav class="header-nav" id="headerNav">
       <a href="index.html">Home</a>
+      <a href="index.html#tools">Tools</a>
       <a href="about.html" class="active">About</a>
       <a href="https://benudell.ai" target="_blank" rel="noopener">benudell.ai</a>
     </nav>
@@ -524,6 +576,25 @@
     <div class="bio-card">
       <p>A banker learning to build things with AI. This site is a living archive of projects built through vibe coding — <strong>shipping ideas fast, learning by doing, and proving that you don't need a CS degree to build software.</strong></p>
       <p>I also work with financial institutions on GenAI strategy — onsite or virtual training, advising executives, speaking at industry and private events, and writing about what actually works when banks try to deploy AI at scale.</p>
+    </div>
+
+    <!-- What I Do -->
+    <div class="whatido">
+      <div class="whatido-tile">
+        <div class="whatido-ico tint-violet">🧭</div>
+        <h3>Consulting &amp; Training</h3>
+        <p>GenAI strategy, enablement, and hands-on training for banks and credit unions — onsite or virtual.</p>
+      </div>
+      <div class="whatido-tile">
+        <div class="whatido-ico tint-teal">🎤</div>
+        <h3>Speaking</h3>
+        <p>Keynotes and sessions at industry conferences, association events, and private leadership retreats.</p>
+      </div>
+      <div class="whatido-tile">
+        <div class="whatido-ico tint-amber">✍️</div>
+        <h3>Writing</h3>
+        <p>Published in The Financial Brand on vibe coding and practical AI adoption in banking.</p>
+      </div>
     </div>
 
     <!-- Contact -->
